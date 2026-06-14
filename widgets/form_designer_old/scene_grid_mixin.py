@@ -1,9 +1,9 @@
 # widgets/form_designer_old/scene_grid_mixin.py
 # -*- coding: utf-8 -*-
 """
-Модуль предоставляет класс-примесь GridMixin для графической сцены FormDesignerScene.
-Обеспечивает гарантированную отрисовку координатной сетки ПОВЕРХ формы через drawForeground.
-Решает проблему перекрытия сетки белой подложкой объекта self.background.
+Модуль предоставляет класс-примесь EventsMixin для FormDesignerScene.
+Управляет координатной сеткой и привязкой (Snap) элементов.
+Интегрирован со всеми кнопками управления из main_widget.py.
 """
 
 from PySide6.QtCore import Qt, QRectF, QPointF
@@ -12,35 +12,38 @@ from PySide6.QtWidgets import QGraphicsScene
 
 
 class GridMixin:
-    """Миксин управления сеткой, накладываемой строго поверх геометрии формы."""
+    """Миксин управления сеткой холста формы."""
 
     def _init_grid(self):
         """Инициализация дефолтных параметров отображения сетки."""
         self._grid_visible = True
         self._snap_enabled = True
         self._grid_size = 10
-        self._grid_color = QColor('#d0d0d0')  # Цвет линий сетки (серый)
-        self._scene_bg_color = QColor('#e8e8e8')  # Фон вокруг формы
-        self._form_bg_color = QColor('#ffffff')  # Фон самой формы (белый)
+        self._grid_color = QColor('#d0d0d0')
+        self._scene_bg_color = QColor('#e8e8e8')
+        self._form_bg_color = QColor('#ffffff')
 
     def set_grid_visible(self, visible: bool):
-        """Включает/выключает отображение сетки."""
+        """Включает/выключает отображение линий сетки."""
         self._grid_visible = visible
         self._refresh_grid_layers()
 
     def set_snap_enabled(self, enabled: bool):
-        """Метод вызывается из main_widget.py для управления привязкой."""
+        """
+        ИСПРАВЛЕНО: Метод вызывается из main_widget.py при клике на кнопку 'Привязка'.
+        """
         self._snap_enabled = enabled
 
     def set_grid_size(self, size: int):
-        """Метод вызывается из main_widget.py для изменения шага сетки."""
-        self._grid_size = max(2, size)  # Защита от нулевого или отрицательного шага
+        """
+        ИСПРАВЛЕНО: Метод вызывается из main_widget.py при изменении шага сетки.
+        """
+        self._grid_size = max(2, size)
         self._refresh_grid_layers()
 
     def _refresh_grid_layers(self):
-        """Принудительно заставляет Qt перерисовать все слои сцены."""
+        """Принудительно заставляет Qt перерисовать слои переднего и заднего плана."""
         if hasattr(self, 'invalidate') and hasattr(self, 'sceneRect'):
-            # Инвалидируем и фон, и передний план сцены
             self.invalidate(self.sceneRect(), QGraphicsScene.BackgroundLayer | QGraphicsScene.ForegroundLayer)
 
     def snap_to_grid(self, pos: QPointF) -> QPointF:
@@ -53,7 +56,6 @@ class GridMixin:
 
     def drawBackground(self, painter: QPainter, rect: QRectF):
         """Заливка внешнего пространства сцены серым цветом окружения."""
-        # Полностью красим сцену в серый цвет «рабочей среды»
         painter.fillRect(rect, getattr(self, '_scene_bg_color', QColor('#e8e8e8')))
 
         # Если форма (background) существует, красим её подложку в белый цвет
@@ -65,43 +67,28 @@ class GridMixin:
             painter.restore()
 
     def drawForeground(self, painter: QPainter, rect: QRectF):
-        """
-        Гарантированная отрисовка сетки в переднем слое (Foreground) строго по контуру формы.
-        Исключает заглатывание линий белым фоном элементов и подложек.
-        """
+        """Гарантированная отрисовка линий сетки строго поверх контура белой формы."""
         super().drawForeground(painter, rect)
-
-        # 1. Если сетка выключена кнопкой — ничего не чертим
         if not getattr(self, '_grid_visible', True):
             return
 
-        # 2. Ищем форму на сцене
         form_item = getattr(self, 'background', None)
         if not form_item:
             return
 
         painter.save()
-
-        # Привязываем координаты рисования к позиции формы на сцене
         painter.setTransform(form_item.sceneTransform(), True)
         f_rect = form_item.rect()
 
-        # Настройка тонкого пера для сетки
         grid_pen = QPen(getattr(self, '_grid_color', QColor('#d0d0d0')), 1, Qt.SolidLine)
         painter.setPen(grid_pen)
 
         step = self._grid_size
+        left, top = int(f_rect.left()), int(f_rect.top())
+        right, bottom = int(f_rect.right()), int(f_rect.bottom())
 
-        left = int(f_rect.left())
-        top = int(f_rect.top())
-        right = int(f_rect.right())
-        bottom = int(f_rect.bottom())
-
-        # Чертим вертикальные направляющие линии строго внутри границ формы
         for x in range(left + step, right, step):
             painter.drawLine(x, top, x, bottom)
-
-        # Чертим горизонтальные направляющие линии строго внутри границ формы
         for y in range(top + step, bottom, step):
             painter.drawLine(left, y, right, y)
 
