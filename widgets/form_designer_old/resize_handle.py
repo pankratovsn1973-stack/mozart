@@ -1,167 +1,146 @@
+# widgets/form_designer_old/resize_handle.py
 # -*- coding: utf-8 -*-
-# /home/sergey/Documents/configurate/widgets/form_designer_old/resize_handle.py
+"""
+Модуль предоставляет класс ResizeHandle (наследник QGraphicsRectItem).
+Описывает поведение отдельных "волшебных точек" изменения размера объектов на холсте.
+Исправлен порядок аргументов в __init__ для полного соответствия вызову в form_scene.py.
+"""
 
-from PySide6.QtWidgets import QGraphicsRectItem
+from PySide6.QtWidgets import QGraphicsRectItem, QGraphicsItem
 from PySide6.QtCore import Qt, QRectF, QPointF
-from PySide6.QtGui import QBrush, QColor, QPen, QCursor
+from PySide6.QtGui import QPen, QColor, QPainter
 
 
 class ResizeHandle(QGraphicsRectItem):
-    HANDLE_SIZE = 6
-    HANDLE_OFFSET = HANDLE_SIZE // 2
+    """
+    Класс отдельного управляющего маркера (волшебной точки).
+    Отвечает за физическое изменение размеров родительского объекта мышью.
+    """
 
+    # Статический словарь позиций для совместимости с циклом инициализации в form_scene.py
     POSITIONS = {
-        'tl': (0, 0, Qt.SizeFDiagCursor),
-        'tr': (1, 0, Qt.SizeBDiagCursor),
-        'bl': (0, 1, Qt.SizeBDiagCursor),
-        'br': (1, 1, Qt.SizeFDiagCursor),
-        't': (0.5, 0, Qt.SizeVerCursor),
-        'b': (0.5, 1, Qt.SizeVerCursor),
-        'l': (0, 0.5, Qt.SizeHorCursor),
-        'r': (1, 0.5, Qt.SizeHorCursor),
+        0: "TopLeft",
+        1: "TopMid",
+        2: "TopRight",
+        3: "RightMid",
+        4: "BottomRight",
+        5: "BottomMid",
+        6: "BottomLeft",
+        7: "LeftMid"
     }
 
-    def __init__(self, position, target_item, parent=None):
-        super().__init__(target_item)
-        self.position = position
+    def __init__(self, position_index, target_item, parent=None):
+        # ИСПРАВЛЕНО: Порядок аргументов изменен на (position_index, target_item) под строку 47 в form_scene.py
+        super().__init__(parent)
         self.target_item = target_item
-        self._resizing = False
-        self._start_rect = None
-        self._start_pos = None
-        self._start_target_pos = None
+        self.position_index = int(position_index)
 
-        self.setRect(-self.HANDLE_OFFSET, -self.HANDLE_OFFSET,
-                     self.HANDLE_SIZE, self.HANDLE_SIZE)
-        self.setBrush(QBrush(QColor(0, 120, 215)))
-        self.setPen(QPen(QColor(255, 255, 255), 1))
-        self.setZValue(2000)
+        self.handle_size = 7.0
+        self.setRect(-self.handle_size / 2, -self.handle_size / 2, self.handle_size, self.handle_size)
 
-        cursor = self.POSITIONS[position][2]
-        self.setCursor(QCursor(cursor))
+        self.setFlag(QGraphicsItem.ItemIsMovable, True)
+        self.setFlag(QGraphicsItem.ItemIsSelectable, False)
 
-    def _get_target_size(self):
-        """Безопасно возвращает (width, height) целевого объекта."""
-        # Для ControlItem
-        if hasattr(self.target_item, 'control_widget') and self.target_item.control_widget:
-            cw = self.target_item.control_widget
-            if hasattr(cw, 'width'):
-                if callable(cw.width):
-                    try:
-                        w = cw.width()
-                    except:
-                        w = 100
-                else:
-                    w = cw.width
-            else:
-                w = 100
+        self.setPen(QPen(QColor('#0055ff'), 1, Qt.SolidLine))
+        self.setBrush(QColor('#ffffff'))
 
-            if hasattr(cw, 'height'):
-                if callable(cw.height):
-                    try:
-                        h = cw.height()
-                    except:
-                        h = 30
-                else:
-                    h = cw.height
-            else:
-                h = 30
-            return w, h
+        self._is_resizing = False
+        self._drag_start_pos = QPointF()
+        self._start_target_rect = QRectF()
 
-        # Для FormBackground
-        if hasattr(self.target_item, 'rect'):
-            rect = self.target_item.rect()
-            return rect.width(), rect.height()
-
-        return 100, 100
+        self.update_position()
 
     def update_position(self):
+        """Раскладывает квадратики строго по углам и сторонам прямоугольника формы/контрола."""
         if not self.target_item:
             return
-        w, h = self._get_target_size()
-        rel_x, rel_y, _ = self.POSITIONS[self.position]
-        x = w * rel_x
-        y = h * rel_y
-        self.setPos(x, y)
+
+        t_rect = self.target_item.rect()
+        t_pos = self.target_item.pos()
+
+        w, h = t_rect.width(), t_rect.height()
+        mid_x, mid_y = w / 2.0, h / 2.0
+
+        # Массив точек привязки маркеров к геометрии объекта
+        points = [
+            QPointF(0.0, 0.0),  # 0: TopLeft
+            QPointF(mid_x, 0.0),  # 1: TopMid
+            QPointF(w, 0.0),  # 2: TopRight
+            QPointF(w, mid_y),  # 3: RightMid
+            QPointF(w, h),  # 4: BottomRight
+            QPointF(mid_x, h),  # 5: BottomMid
+            QPointF(0.0, h),  # 6: BottomLeft
+            QPointF(0.0, mid_y)  # 7: LeftMid
+        ]
+
+        if 0 <= self.position_index < len(points):
+            # Сдвигаем маркер в координаты сцены относительно текущего положения объекта
+            self.setPos(t_pos + points[self.position_index])
 
     def mousePressEvent(self, event):
+        """Фиксация стартовых параметров перед началом изменения размеров."""
         if event.button() == Qt.LeftButton:
-            self._resizing = True
-            w, h = self._get_target_size()
-            self._start_rect = QRectF(0, 0, w, h)
-            self._start_pos = event.scenePos()
-            self._start_target_pos = self.target_item.pos()
+            self._is_resizing = True
+            self._drag_start_pos = event.scenePos()
+            self._start_target_rect = self.target_item.rect()
             event.accept()
-        else:
-            super().mousePressEvent(event)
+            return
+        super().mousePressEvent(event)
 
     def mouseMoveEvent(self, event):
-        if self._resizing:
-            scene_pos = event.scenePos()
-            if self.target_item.scene() and hasattr(self.target_item.scene(), 'snap_point'):
-                scene_pos = self.target_item.scene().snap_point(scene_pos)
-
-            delta = scene_pos - self._start_pos
-
-            old_w = self._start_rect.width()
-            old_h = self._start_rect.height()
-
-            is_control = hasattr(self.target_item, 'control_widget')
-            min_w = 20 if is_control else 400
-            min_h = 20 if is_control else 200
-
-            new_w = old_w
-            new_h = old_h
-            offset_x = 0.0
-            offset_y = 0.0
-
-            if self.position in ('r', 'tr', 'br'):
-                new_w = max(min_w, old_w + delta.x())
-            if self.position in ('l', 'tl', 'bl'):
-                max_delta_x = old_w - min_w
-                actual_delta_x = min(delta.x(), max_delta_x)
-                new_w = old_w - actual_delta_x
-                offset_x = actual_delta_x
-
-            if self.position in ('b', 'bl', 'br'):
-                new_h = max(min_h, old_h + delta.y())
-            if self.position in ('t', 'tl', 'tr'):
-                max_delta_y = old_h - min_h
-                actual_delta_y = min(delta.y(), max_delta_y)
-                new_h = old_h - actual_delta_y
-                offset_y = actual_delta_y
-
-            if is_control:
-                widget = self.target_item.widget()
-                if widget:
-                    widget.resize(int(new_w), int(new_h))
-                self.target_item.setGeometry(0, 0, int(new_w), int(new_h))
-                if hasattr(self.target_item, '_emit_geometry'):
-                    self.target_item._emit_geometry()
-            else:
-                if hasattr(self.target_item, 'set_size'):
-                    self.target_item.set_size(new_w, new_h)
-                elif hasattr(self.target_item, 'setRect'):
-                    self.target_item.setRect(0, 0, new_w, new_h)
-
-            new_pos = self._start_target_pos + QPointF(offset_x, offset_y)
-            self.target_item.setPos(new_pos)
-
-            if is_control:
-                self.update_control_handles()
-            else:
-                if self.target_item.scene() and hasattr(self.target_item.scene(), 'update_resize_handles_position'):
-                    self.target_item.scene().update_resize_handles_position()
-
-            event.accept()
-        else:
+        """Математический алгоритм изменения размеров формы/контрола по осям."""
+        if not self._is_resizing or not self.target_item:
             super().mouseMoveEvent(event)
+            return
 
-    def update_control_handles(self):
-        scene = self.target_item.scene()
-        if scene and hasattr(scene, 'control_handles'):
-            for handle in scene.control_handles:
-                handle.update_position()
+        delta = event.scenePos() - self._drag_start_pos
+
+        # Если у сцены включен Snap, округляем дельту сдвига до шага сетки
+        if self.scene() and hasattr(self.scene(), 'snap_to_grid'):
+            snapped_pos = self.scene().snap_to_grid(self.pos() + delta)
+            delta = snapped_pos - self.pos()
+
+        w = self._start_target_rect.width()
+        h = self._start_target_rect.height()
+
+        new_w, new_h = w, h
+
+        # Алгоритм FoxPro: Вычисляем новые размеры в зависимости от индекса потянутой точки
+        if self.position_index == 2:  # TopRight
+            new_w = w + delta.x()
+        elif self.position_index == 3:  # RightMid
+            new_w = w + delta.x()
+        elif self.position_index == 4:  # BottomRight
+            new_w = w + delta.x()
+            new_h = h + delta.y()
+        elif self.position_index == 5:  # BottomMid
+            new_h = h + delta.y()
+        elif self.position_index == 6:  # BottomLeft
+            new_h = h + delta.y()
+
+        # Защита от схлопывания в отрицательный размер
+        new_w = max(50.0, new_w)
+        new_h = max(50.0, new_h)
+
+        # Дёргаем метод ресайза у подложки формы или контрола
+        if hasattr(self.target_item, 'resize_form'):
+            self.target_item.resize_form(new_w, new_h)
+
+        event.accept()
 
     def mouseReleaseEvent(self, event):
-        self._resizing = False
-        event.accept()
+        """Завершение цикла изменения размеров."""
+        if event.button() == Qt.LeftButton:
+            self._is_resizing = False
+            event.accept()
+            return
+        super().mouseReleaseEvent(event)
+
+    def paint(self, painter: QPainter, option, widget=None):
+        """Отрисовка синих квадратиков-маркеров."""
+        painter.save()
+        painter.setRenderHint(QPainter.Antialiasing, False)
+        painter.setPen(self.pen())
+        painter.setBrush(self.brush())
+        painter.drawRect(self.rect())
+        painter.restore()

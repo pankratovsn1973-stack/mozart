@@ -3,7 +3,7 @@
 """
 Модуль предоставляет класс FormBackground (наследник QGraphicsRectItem).
 Является визуальной подложкой (холстом проектируемой формы) на сцене дизайнера.
-Исправлен баг отрыва волшебных точек формы путем циклического перевыделения состояния.
+Полностью решен баг отрыва волшебных точек формы через прямой ссылочный массив _handles.
 """
 
 from PySide6.QtWidgets import QGraphicsRectItem, QGraphicsItem
@@ -42,11 +42,17 @@ class StatusBarStub(QGraphicsRectItem):
 
 
 class FormBackground(QGraphicsRectItem):
-    """Класс подложки формы для визуального редактора."""
+    """
+    Класс подложки формы для визуального редактора.
+    Обеспечивает жесткую, прямую координацию привязанных к ней маркеров ResizeHandle.
+    """
 
     def __init__(self, width: float = 400, height: float = 300, title: str = "", parent=None):
         super().__init__(parent)
         self.title = str(title)
+
+        # Динамический массив прямых ссылок на 8 волшебных точек (наполняется из form_scene.py)
+        self._handles = []
 
         self.title_bar = TitleBarStub()
         self.tool_bar = ToolBarStub()
@@ -76,26 +82,25 @@ class FormBackground(QGraphicsRectItem):
         return self.rect().adjusted(-1, -1, 1, 1)
 
     def resize_form(self, width: float, height: float):
-        """
-        Метод безопасного изменения размеров формы из инспектора свойств.
-        ИСПРАВЛЕНО: Временный сброс выделения принудительно прижимает точки к краям.
-        """
+        """Метод безопасного изменения размеров формы из инспектора или мыши."""
         w = max(50.0, float(width))
         h = max(50.0, float(height))
 
         self.prepareGeometryChange()
         self.setRect(0.0, 0.0, w, h)
 
+        # Растаскиваем маркеры по новым углам формы
+        for handle in self._handles:
+            if hasattr(handle, 'update_position'):
+                handle.update_position()
+
         if self.scene():
             self.scene().setSceneRect(self.scene().itemsBoundingRect())
 
-            # ФОКС-ТРЮК: Если форма выделена, временно снимаем выделение и возвращаем его.
-            # Это аппаратно заставляет Qt уничтожить старую рамку пунктира и нарисовать точки точно по новым краям!
-            if self.isSelected():
-                self.setSelected(False)
-                self.setSelected(True)
+            # КРИТИЧЕСКИЙ ФИКС: Выстреливаем сигнал сцены, чтобы таблица свойств мгновенно обновила цифры!
+            if hasattr(self.scene(), 'form_resized'):
+                self.scene().form_resized.emit(w, h)
 
-            # Перерисовываем вьюпорт
             for view in self.scene().views():
                 if view.viewport():
                     view.viewport().update()
@@ -115,30 +120,25 @@ class FormBackground(QGraphicsRectItem):
         """Визуальная отрисовка элементов окна формы прямо на её теле."""
         painter.save()
 
-        # 1. Рамка формы
         border_pen = QPen(QColor('#808080'), 1, Qt.SolidLine)
         painter.setPen(border_pen)
         painter.setBrush(Qt.NoBrush)
         painter.drawRect(self.rect())
 
-        # 2. Заголовок (TitleBar)
         if self.title_bar:
             tb_height = self.title_bar.get_height()
             tb_rect = QRectF(self.rect().left(), self.rect().top(), self.rect().width(), tb_height)
             painter.fillRect(tb_rect, QColor('#d8d8d8'))
             painter.drawRect(tb_rect)
-
             painter.setPen(QPen(QColor('#000000')))
             painter.drawText(tb_rect.adjusted(8, 0, 0, 0), Qt.AlignVCenter | Qt.AlignLeft, self.title)
 
-        # 3. Статус-бар (StatusBar)
         if self.status_bar:
             sb_height = self.status_bar.get_height()
             sb_rect = QRectF(self.rect().left(), self.rect().bottom() - sb_height, self.rect().width(), sb_height)
             painter.fillRect(sb_rect, QColor('#e0e0e0'))
             painter.setPen(QPen(QColor('#b0b0b0'), 1))
             painter.drawLine(sb_rect.left(), sb_rect.top(), sb_rect.right(), sb_rect.top())
-
             painter.setPen(QPen(QColor('#555555')))
             painter.drawText(sb_rect.adjusted(8, 0, 0, 0), Qt.AlignVCenter | Qt.AlignLeft, "Ready")
 
