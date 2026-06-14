@@ -1,0 +1,1451 @@
+[
+  {
+    "file": "/home/sergey/Documents/configurate/main_verification_optimized.py",
+    "line": 60,
+    "type": "print",
+    "original": " СОХРАНЕНИЕ НОСИТЕЛЕЙ ",
+    "full_line": "print(\" СОХРАНЕНИЕ НОСИТЕЛЕЙ \")"
+  },
+  {
+    "file": "/home/sergey/Documents/configurate/main_verification_optimized.py",
+    "line": 94,
+    "type": "print",
+    "original": " СТАТИСТИКА НОСИТЕЛЕЙ ",
+    "full_line": "print(\" СТАТИСТИКА НОСИТЕЛЕЙ \")"
+  },
+  {
+    "file": "/home/sergey/Documents/configurate/main_verification_optimized.py",
+    "line": 124,
+    "type": "print",
+    "original": "   СТЕНД СИНХРОННОЙ ПОСТКВАНТОВОЙ СЕССИИ ERP MOZART: ВАСЯ И ПЕТЯ",
+    "full_line": "print(\"   СТЕНД СИНХРОННОЙ ПОСТКВАНТОВОЙ СЕССИИ ERP MOZART: ВАСЯ И ПЕТЯ\")"
+  },
+  {
+    "file": "/home/sergey/Documents/configurate/main_verification_optimized.py",
+    "line": 125,
+    "type": "print",
+    "original": "   С ВИЗУАЛИЗАЦИЕЙ НОСИТЕЛЕЙ",
+    "full_line": "print(\"   С ВИЗУАЛИЗАЦИЕЙ НОСИТЕЛЕЙ\")"
+  },
+  {
+    "file": "/home/sergey/Documents/configurate/main_verification_optimized.py",
+    "line": 154,
+    "type": "print",
+    "original": " СЦЕНАРИЙ А: ЛЕГИТИМНЫЙ ОБМЕН ДАННЫМИ (Верный SL)",
+    "full_line": "print(\" СЦЕНАРИЙ А: ЛЕГИТИМНЫЙ ОБМЕН ДАННЫМИ (Верный SL)\")"
+  },
+  {
+    "file": "/home/sergey/Documents/configurate/main_verification_optimized.py",
+    "line": 173,
+    "type": "print",
+    "original": ">>> УСПЕХ: Носитель ГЛАДКИЙ! Верификация пройдена.",
+    "full_line": "print(\">>> УСПЕХ: Носитель ГЛАДКИЙ! Верификация пройдена.\")"
+  },
+  {
+    "file": "/home/sergey/Documents/configurate/main_verification_optimized.py",
+    "line": 176,
+    "type": "print",
+    "original": ">>> БРАК: Какофония! Пакет сброшен.",
+    "full_line": "print(\">>> БРАК: Какофония! Пакет сброшен.\")"
+  },
+  {
+    "file": "/home/sergey/Documents/configurate/main_verification_optimized.py",
+    "line": 180,
+    "type": "print",
+    "original": " СЦЕНАРИЙ Б: ПОПЫТКА ВЗЛОМА (SL+1)",
+    "full_line": "print(\" СЦЕНАРИЙ Б: ПОПЫТКА ВЗЛОМА (SL+1)\")"
+  },
+  {
+    "file": "/home/sergey/Documents/configurate/main_verification_optimized.py",
+    "line": 198,
+    "type": "print",
+    "original": ">>> УСПЕХ: Зафиксирована КАКОФОНИЯ! Атака обнаружена.",
+    "full_line": "print(\">>> УСПЕХ: Зафиксирована КАКОФОНИЯ! Атака обнаружена.\")"
+  },
+  {
+    "file": "/home/sergey/Documents/configurate/main_verification_optimized.py",
+    "line": 200,
+    "type": "print",
+    "original": ">>> КРИТИЧЕСКАЯ ОШИБКА: Атака не обнаружена!",
+    "full_line": "print(\">>> КРИТИЧЕСКАЯ ОШИБКА: Атака не обнаружена!\")"
+  },
+  {
+    "file": "/home/sergey/Documents/configurate/main_verification_optimized.py",
+    "line": 208,
+    "type": "print",
+    "original": " ИТОГИ ТЕСТИРОВАНИЯ ",
+    "full_line": "print(\" ИТОГИ ТЕСТИРОВАНИЯ \".center(70, \"=\"))"
+  },
+  {
+    "file": "/home/sergey/Documents/configurate/main_verification_optimized.py",
+    "line": 215,
+    "type": "print",
+    "original": "\\n  ✅ СИСТЕМА РАБОТАЕТ КОРРЕКТНО!",
+    "full_line": "print(\"\\n  ✅ СИСТЕМА РАБОТАЕТ КОРРЕКТНО!\")"
+  },
+  {
+    "file": "/home/sergey/Documents/configurate/main_verification_optimized.py",
+    "line": 223,
+    "type": "print",
+    "original": " Сохраненные файлы:",
+    "full_line": "print(\" Сохраненные файлы:\")"
+  },
+  {
+    "file": "/home/sergey/Documents/configurate/main_verification_optimized.py",
+    "line": 224,
+    "type": "print",
+    "original": "  - surface_1_source_*.png      - исходный носитель из музыки",
+    "full_line": "print(\"  - surface_1_source_*.png      - исходный носитель из музыки\")"
+  },
+  {
+    "file": "/home/sergey/Documents/configurate/main_verification_optimized.py",
+    "line": 225,
+    "type": "print",
+    "original": "  - surface_2_encrypted_*.png   - зашифрованный носитель",
+    "full_line": "print(\"  - surface_2_encrypted_*.png   - зашифрованный носитель\")"
+  },
+  {
+    "file": "/home/sergey/Documents/configurate/main_verification_optimized.py",
+    "line": 226,
+    "type": "print",
+    "original": "  - surface_3_decrypted_correct_*.png - расшифрованный (верный ключ)",
+    "full_line": "print(\"  - surface_3_decrypted_correct_*.png - расшифрованный (верный ключ)\")"
+  },
+  {
+    "file": "/home/sergey/Documents/configurate/main_verification_optimized.py",
+    "line": 227,
+    "type": "print",
+    "original": "  - surface_4_decrypted_wrong_*.png   - расшифрованный (атака)",
+    "full_line": "print(\"  - surface_4_decrypted_wrong_*.png   - расшифрованный (атака)\")"
+  },
+  {
+    "file": "/home/sergey/Documents/configurate/makeJsonPrj.py",
+    "line": 120,
+    "type": "print",
+    "original": "Ждите, это может занять некоторое время...",
+    "full_line": "print(\"Ждите, это может занять некоторое время...\")"
+  },
+  {
+    "file": "/home/sergey/Documents/configurate/makeDbPdf.py",
+    "line": 58,
+    "type": "print",
+    "original": "Предупреждение: шрифт с кириллицей не найден, используется Helvetica (латиница).",
+    "full_line": "print(\"Предупреждение: шрифт с кириллицей не найден, используется Helvetica (латиница).\")"
+  },
+  {
+    "file": "/home/sergey/Documents/configurate/fix_qaction_imports.py",
+    "line": 55,
+    "type": "print",
+    "original": "Готово!",
+    "full_line": "print(\"Готово!\")"
+  },
+  {
+    "file": "/home/sergey/Documents/configurate/mozart_nodes_optimized.py",
+    "line": 18,
+    "type": "print",
+    "original": "[ВАСЯ -> Сервер]: Принял открытый ключ решетки от Пети.",
+    "full_line": "print(\"[ВАСЯ -> Сервер]: Принял открытый ключ решетки от Пети.\")"
+  },
+  {
+    "file": "/home/sergey/Documents/configurate/mozart_nodes_optimized.py",
+    "line": 40,
+    "type": "print",
+    "original": "[ПЕТЯ -> Клиент]: Сгенерировал открытый базис многомерной решетки.",
+    "full_line": "print(\"[ПЕТЯ -> Клиент]: Сгенерировал открытый базис многомерной решетки.\")"
+  },
+  {
+    "file": "/home/sergey/Documents/configurate/mozart_nodes_optimized.py",
+    "line": 44,
+    "type": "print",
+    "original": "[ПЕТЯ -> Клиент]: Принял пакет от Васи. Запуск анализа остова...",
+    "full_line": "print(\"[ПЕТЯ -> Клиент]: Принял пакет от Васи. Запуск анализа остова...\")"
+  },
+  {
+    "file": "/home/sergey/Documents/configurate/mozart_nodes_optimized.py",
+    "line": 49,
+    "type": "print",
+    "original": "[КРИТ]: Петя использует дефектный закрытый ключ (ошибка в 1 знак)!",
+    "full_line": "print(\"[КРИТ]: Петя использует дефектный закрытый ключ (ошибка в 1 знак)!\")"
+  },
+  {
+    "file": "/home/sergey/Documents/configurate/visual6.py",
+    "line": 28,
+    "type": "print",
+    "original": "=== Гибридный Конструктор Панкратова (Тотальная модуляция) ===",
+    "full_line": "print(\"=== Гибридный Конструктор Панкратова (Тотальная модуляция) ===\")"
+  },
+  {
+    "file": "/home/sergey/Documents/configurate/visual6.py",
+    "line": 155,
+    "type": "print",
+    "original": "   ВЕРИФИКАЦИЯ ТОТАЛЬНОЙ МОДУЛЯЦИИ РЕШЕТОК ПАНКРАТОВА",
+    "full_line": "print(\"   ВЕРИФИКАЦИЯ ТОТАЛЬНОЙ МОДУЛЯЦИИ РЕШЕТОК ПАНКРАТОВА\")"
+  },
+  {
+    "file": "/home/sergey/Documents/configurate/makeJsonDBStruck2.py",
+    "line": 625,
+    "type": "print",
+    "original": "ЗАПУСК ЭКСПОРТА СТРУКТУРЫ И ДАННЫХ POSTGRESQL",
+    "full_line": "print(\"ЗАПУСК ЭКСПОРТА СТРУКТУРЫ И ДАННЫХ POSTGRESQL\")"
+  },
+  {
+    "file": "/home/sergey/Documents/configurate/makeJsonDBStruck2.py",
+    "line": 642,
+    "type": "print",
+    "original": "\\nНастройки выгрузки по схемам:",
+    "full_line": "print(\"\\nНастройки выгрузки по схемам:\")"
+  },
+  {
+    "file": "/home/sergey/Documents/configurate/makeJsonDBStruck2.py",
+    "line": 682,
+    "type": "print",
+    "original": "  Таблицы...",
+    "full_line": "print(\"  Таблицы...\")"
+  },
+  {
+    "file": "/home/sergey/Documents/configurate/makeJsonDBStruck2.py",
+    "line": 692,
+    "type": "print",
+    "original": "  Представления...",
+    "full_line": "print(\"  Представления...\")"
+  },
+  {
+    "file": "/home/sergey/Documents/configurate/makeJsonDBStruck2.py",
+    "line": 698,
+    "type": "print",
+    "original": "  Процедуры, функции, триггеры...",
+    "full_line": "print(\"  Процедуры, функции, триггеры...\")"
+  },
+  {
+    "file": "/home/sergey/Documents/configurate/makeJsonDBStruck2.py",
+    "line": 704,
+    "type": "print",
+    "original": "  Индексы...",
+    "full_line": "print(\"  Индексы...\")"
+  },
+  {
+    "file": "/home/sergey/Documents/configurate/makeJsonDBStruck2.py",
+    "line": 710,
+    "type": "print",
+    "original": "  Последовательности...",
+    "full_line": "print(\"  Последовательности...\")"
+  },
+  {
+    "file": "/home/sergey/Documents/configurate/makeJsonDBStruck2.py",
+    "line": 716,
+    "type": "print",
+    "original": "  Выгрузка данных из таблиц...",
+    "full_line": "print(\"  Выгрузка данных из таблиц...\")"
+  },
+  {
+    "file": "/home/sergey/Documents/configurate/makeJsonDBStruck2.py",
+    "line": 732,
+    "type": "print",
+    "original": "СОХРАНЕНИЕ РЕЗУЛЬТАТА...",
+    "full_line": "print(\"СОХРАНЕНИЕ РЕЗУЛЬТАТА...\")"
+  },
+  {
+    "file": "/home/sergey/Documents/configurate/makeJsonDBStruck2.py",
+    "line": 738,
+    "type": "print",
+    "original": "СТАТИСТИКА ЭКСПОРТА",
+    "full_line": "print(\"СТАТИСТИКА ЭКСПОРТА\")"
+  },
+  {
+    "file": "/home/sergey/Documents/configurate/makeJsonDBStruck2.py",
+    "line": 768,
+    "type": "print",
+    "original": "\\n✅ ЭКСПОРТ УСПЕШНО ЗАВЕРШЁН!",
+    "full_line": "print(\"\\n✅ ЭКСПОРТ УСПЕШНО ЗАВЕРШЁН!\")"
+  },
+  {
+    "file": "/home/sergey/Documents/configurate/визуал4.py",
+    "line": 50,
+    "type": "print",
+    "original": "Файл оригинала не найден. Генерируем 5 секунд оркестровой симуляции...",
+    "full_line": "print(\"Файл оригинала не найден. Генерируем 5 секунд оркестровой симуляции...\")"
+  },
+  {
+    "file": "/home/sergey/Documents/configurate/визуал4.py",
+    "line": 67,
+    "type": "print",
+    "original": "Запуск сквозной тензорной деформации...",
+    "full_line": "print(\"Запуск сквозной тензорной деформации...\")"
+  },
+  {
+    "file": "/home/sergey/Documents/configurate/визуал4.py",
+    "line": 87,
+    "type": "print",
+    "original": "Реконструкция измененной ткани в физический звук...",
+    "full_line": "print(\"Реконструкция измененной ткани в физический звук...\")"
+  },
+  {
+    "file": "/home/sergey/Documents/configurate/визуализация 2.py",
+    "line": 30,
+    "type": "print",
+    "original": "=== Запуск компактного дампа светового потока ===",
+    "full_line": "print(\"=== Запуск компактного дампа светового потока ===\")"
+  },
+  {
+    "file": "/home/sergey/Documents/configurate/визуализация 2.py",
+    "line": 36,
+    "type": "print",
+    "original": "Файл не найден. Генерируем 5 секунд симуляции...",
+    "full_line": "print(\"Файл не найден. Генерируем 5 секунд симуляции...\")"
+  },
+  {
+    "file": "/home/sergey/Documents/configurate/визуализация 2.py",
+    "line": 77,
+    "type": "print",
+    "original": "=== Компактный дамп успешно завершен ===",
+    "full_line": "print(\"=== Компактный дамп успешно завершен ===\")"
+  },
+  {
+    "file": "/home/sergey/Documents/configurate/mozart_nodes.py",
+    "line": 18,
+    "type": "print",
+    "original": "[ВАСЯ -> Сервер]: Принял открытый ключ решетки от Пети.",
+    "full_line": "print(\"[ВАСЯ -> Сервер]: Принял открытый ключ решетки от Пети.\")"
+  },
+  {
+    "file": "/home/sergey/Documents/configurate/mozart_nodes.py",
+    "line": 40,
+    "type": "print",
+    "original": "[ПЕТЯ -> Клиент]: Сгенерировал открытый базис многомерной решетки.",
+    "full_line": "print(\"[ПЕТЯ -> Клиент]: Сгенерировал открытый базис многомерной решетки.\")"
+  },
+  {
+    "file": "/home/sergey/Documents/configurate/mozart_nodes.py",
+    "line": 44,
+    "type": "print",
+    "original": "[ПЕТЯ -> Клиент]: Принял пакет от Васи. Запуск анализа остова...",
+    "full_line": "print(\"[ПЕТЯ -> Клиент]: Принял пакет от Васи. Запуск анализа остова...\")"
+  },
+  {
+    "file": "/home/sergey/Documents/configurate/mozart_nodes.py",
+    "line": 54,
+    "type": "print",
+    "original": "[КРИТ]: Петя использует дефектный закрытый ключ (ошибка в 1 знаке)!",
+    "full_line": "print(\"[КРИТ]: Петя использует дефектный закрытый ключ (ошибка в 1 знаке)!\")"
+  },
+  {
+    "file": "/home/sergey/Documents/configurate/makeDBtoJsonFromAutoDoc.py",
+    "line": 39,
+    "type": "print",
+    "original": "Ошибка: таблица autodoc.schema_dumps пуста!",
+    "full_line": "print(\"Ошибка: таблица autodoc.schema_dumps пуста!\")"
+  },
+  {
+    "file": "/home/sergey/Documents/configurate/makeDBtoJsonFromAutoDoc.py",
+    "line": 40,
+    "type": "print",
+    "original": "Сначала запустите процедуру autodoc.dump_schema_to_table для нужных схем",
+    "full_line": "print(\"Сначала запустите процедуру autodoc.dump_schema_to_table для нужных схем\")"
+  },
+  {
+    "file": "/home/sergey/Documents/configurate/makePdf.py",
+    "line": 51,
+    "type": "print",
+    "original": "Предупреждение: шрифт с поддержкой кириллицы не найден, используется стандартный (латиница).",
+    "full_line": "print(\"Предупреждение: шрифт с поддержкой кириллицы не найден, используется стандартный (латиница).\")"
+  },
+  {
+    "file": "/home/sergey/Documents/configurate/makePdf.py",
+    "line": 175,
+    "type": "print",
+    "original": "Нет .py файлов для обработки.",
+    "full_line": "print(\"Нет .py файлов для обработки.\")"
+  },
+  {
+    "file": "/home/sergey/Documents/configurate/tensor_crypto_cell.py",
+    "line": 100,
+    "type": "print",
+    "original": "✅ Сессионный ключ успешно передан через TensorLWE",
+    "full_line": "print(\"✅ Сессионный ключ успешно передан через TensorLWE\")"
+  },
+  {
+    "file": "/home/sergey/Documents/configurate/tensor_crypto_cell.py",
+    "line": 128,
+    "type": "print",
+    "original": "\\n--- Расшифрованный текст ---",
+    "full_line": "print(\"\\n--- Расшифрованный текст ---\")"
+  },
+  {
+    "file": "/home/sergey/Documents/configurate/tensor_crypto_cell.py",
+    "line": 132,
+    "type": "print",
+    "original": "\\n✅ Гибридная криптосистема работает идеально!",
+    "full_line": "print(\"\\n✅ Гибридная криптосистема работает идеально!\")"
+  },
+  {
+    "file": "/home/sergey/Documents/configurate/tensor_crypto_cell.py",
+    "line": 134,
+    "type": "print",
+    "original": "\\n❌ Ошибка при расшифровке текста",
+    "full_line": "print(\"\\n❌ Ошибка при расшифровке текста\")"
+  },
+  {
+    "file": "/home/sergey/Documents/configurate/визуал5.py",
+    "line": 28,
+    "type": "print",
+    "original": "=== Гибридный Конструктор Панкратова (Тест Дефектного Ключа) ===",
+    "full_line": "print(\"=== Гибридный Конструктор Панкратова (Тест Дефектного Ключа) ===\")"
+  },
+  {
+    "file": "/home/sergey/Documents/configurate/визуал5.py",
+    "line": 168,
+    "type": "print",
+    "original": "   СРАВНИТЕЛЬНЫЙ АНАЛИЗ ДЕШИФРАЦИИ РЕШЕТОК ПАНКРАТОВА",
+    "full_line": "print(\"   СРАВНИТЕЛЬНЫЙ АНАЛИЗ ДЕШИФРАЦИИ РЕШЕТОК ПАНКРАТОВА\")"
+  },
+  {
+    "file": "/home/sergey/Documents/configurate/визуал5.py",
+    "line": 173,
+    "type": "print",
+    "original": "[ ВАРИАНТ А: ПРАВИЛЬНАЯ КЛЮЧЕВАЯ ПАРА ]",
+    "full_line": "print(\"[ ВАРИАНТ А: ПРАВИЛЬНАЯ КЛЮЧЕВАЯ ПАРА ]\")"
+  },
+  {
+    "file": "/home/sergey/Documents/configurate/визуал5.py",
+    "line": 183,
+    "type": "print",
+    "original": "\\n[ ВАРИАНТ Б: ДЕФЕКТНЫЙ ЗАКРЫТЫЙ КЛЮЧ (Ошибка в 1 знаке) ]",
+    "full_line": "print(\"\\n[ ВАРИАНТ Б: ДЕФЕКТНЫЙ ЗАКРЫТЫЙ КЛЮЧ (Ошибка в 1 знаке) ]\")"
+  },
+  {
+    "file": "/home/sergey/Documents/configurate/composition_manager.py",
+    "line": 53,
+    "type": "QMessageBox",
+    "subtype": "warning",
+    "original": "Ошибка",
+    "full_line": "QMessageBox.warning(self.parent, \"Ошибка\", \"Не удалось подготовить ext-таблицу/поле\")"
+  },
+  {
+    "file": "/home/sergey/Documents/configurate/composition_manager.py",
+    "line": 62,
+    "type": "QMessageBox",
+    "subtype": "warning",
+    "original": "Ошибка",
+    "full_line": "QMessageBox.warning(self.parent, \"Ошибка\", \"Такая связь уже существует\")"
+  },
+  {
+    "file": "/home/sergey/Documents/configurate/composition_manager.py",
+    "line": 73,
+    "type": "QMessageBox",
+    "subtype": "warning",
+    "original": "Ошибка",
+    "full_line": "QMessageBox.warning(self.parent, \"Ошибка\", \"Не удалось подготовить ext-таблицу/поле\")"
+  },
+  {
+    "file": "/home/sergey/Documents/configurate/composition_manager.py",
+    "line": 82,
+    "type": "QMessageBox",
+    "subtype": "warning",
+    "original": "Ошибка",
+    "full_line": "QMessageBox.warning(self.parent, \"Ошибка\", \"Такая связь уже существует\")"
+  },
+  {
+    "file": "/home/sergey/Documents/configurate/визуализ 3.py",
+    "line": 20,
+    "type": "print",
+    "original": "=== Шаг 1: Загрузка и FFT-анализ оригинала ===",
+    "full_line": "print(\"=== Шаг 1: Загрузка и FFT-анализ оригинала ===\")"
+  },
+  {
+    "file": "/home/sergey/Documents/configurate/визуализ 3.py",
+    "line": 23,
+    "type": "print",
+    "original": "Генерируем короткий тестовый фрагмент для верификации кода...",
+    "full_line": "print(\"Генерируем короткий тестовый фрагмент для верификации кода...\")"
+  },
+  {
+    "file": "/home/sergey/Documents/configurate/визуализ 3.py",
+    "line": 41,
+    "type": "print",
+    "original": "\\n=== Шаг 2: Трансляция в 60-канальное пространство Галуа ===",
+    "full_line": "print(\"\\n=== Шаг 2: Трансляция в 60-канальное пространство Галуа ===\")"
+  },
+  {
+    "file": "/home/sergey/Documents/configurate/визуализ 3.py",
+    "line": 59,
+    "type": "print",
+    "original": "=== Шаг 3: Алгебраическая деформация корневой системы (Сдвиг на 10%) ===",
+    "full_line": "print(\"=== Шаг 3: Алгебраическая деформация корневой системы (Сдвиг на 10%) ===\")"
+  },
+  {
+    "file": "/home/sergey/Documents/configurate/визуализ 3.py",
+    "line": 98,
+    "type": "print",
+    "original": "\\n=== Шаг 4: Деканонизация и обратный инверсный синтез звука ===",
+    "full_line": "print(\"\\n=== Шаг 4: Деканонизация и обратный инверсный синтез звука ===\")"
+  },
+  {
+    "file": "/home/sergey/Documents/configurate/визуализация.py",
+    "line": 57,
+    "type": "print",
+    "original": "=== Анализ и подготовка аудио ===",
+    "full_line": "print(\"=== Анализ и подготовка аудио ===\")"
+  },
+  {
+    "file": "/home/sergey/Documents/configurate/extract_strings.py",
+    "line": 142,
+    "type": "print",
+    "original": "🔍 Сканируем проект...",
+    "full_line": "print(\"🔍 Сканируем проект...\")"
+  },
+  {
+    "file": "/home/sergey/Documents/configurate/extract_strings.py",
+    "line": 170,
+    "type": "print",
+    "original": "\\n📋 По типам:",
+    "full_line": "print(\"\\n📋 По типам:\")"
+  },
+  {
+    "file": "/home/sergey/Documents/configurate/makeJsonDBStruck.py",
+    "line": 607,
+    "type": "print",
+    "original": "Запуск без аргументов. Использую настройки из DEFAULT_RUNTIME_CONFIG.",
+    "full_line": "print(\"Запуск без аргументов. Использую настройки из DEFAULT_RUNTIME_CONFIG.\")"
+  },
+  {
+    "file": "/home/sergey/Documents/configurate/makeJsonDBStruck.py",
+    "line": 702,
+    "type": "print",
+    "original": "  Получение таблиц...",
+    "full_line": "print(\"  Получение таблиц...\")"
+  },
+  {
+    "file": "/home/sergey/Documents/configurate/makeJsonDBStruck.py",
+    "line": 706,
+    "type": "print",
+    "original": "  Получение представлений...",
+    "full_line": "print(\"  Получение представлений...\")"
+  },
+  {
+    "file": "/home/sergey/Documents/configurate/makeJsonDBStruck.py",
+    "line": 710,
+    "type": "print",
+    "original": "  Получение процедур...",
+    "full_line": "print(\"  Получение процедур...\")"
+  },
+  {
+    "file": "/home/sergey/Documents/configurate/makeJsonDBStruck.py",
+    "line": 714,
+    "type": "print",
+    "original": "  Получение функций...",
+    "full_line": "print(\"  Получение функций...\")"
+  },
+  {
+    "file": "/home/sergey/Documents/configurate/makeJsonDBStruck.py",
+    "line": 718,
+    "type": "print",
+    "original": "  Получение триггеров...",
+    "full_line": "print(\"  Получение триггеров...\")"
+  },
+  {
+    "file": "/home/sergey/Documents/configurate/makeJsonDBStruck.py",
+    "line": 722,
+    "type": "print",
+    "original": "  Получение индексов...",
+    "full_line": "print(\"  Получение индексов...\")"
+  },
+  {
+    "file": "/home/sergey/Documents/configurate/makeJsonDBStruck.py",
+    "line": 726,
+    "type": "print",
+    "original": "  Получение последовательностей...",
+    "full_line": "print(\"  Получение последовательностей...\")"
+  },
+  {
+    "file": "/home/sergey/Documents/configurate/makeJsonDBStruck.py",
+    "line": 745,
+    "type": "print",
+    "original": "Сохранение результата...",
+    "full_line": "print(\"Сохранение результата...\")"
+  },
+  {
+    "file": "/home/sergey/Documents/configurate/makeJsonDBStruck.py",
+    "line": 757,
+    "type": "print",
+    "original": "СТАТИСТИКА ЭКСПОРТА",
+    "full_line": "print(\"СТАТИСТИКА ЭКСПОРТА\")"
+  },
+  {
+    "file": "/home/sergey/Documents/configurate/makeJsonDBStruck.py",
+    "line": 777,
+    "type": "print",
+    "original": "\\n✅ Экспорт успешно завершен!",
+    "full_line": "print(\"\\n✅ Экспорт успешно завершен!\")"
+  },
+  {
+    "file": "/home/sergey/Documents/configurate/music_evaluator.py",
+    "line": 107,
+    "type": "print",
+    "original": "  ❌ НЕ УДАЛОСЬ ОБРАБОТАТЬ ФАЙЛ",
+    "full_line": "print(\"  ❌ НЕ УДАЛОСЬ ОБРАБОТАТЬ ФАЙЛ\")"
+  },
+  {
+    "file": "/home/sergey/Documents/configurate/music_evaluator.py",
+    "line": 141,
+    "type": "print",
+    "original": " СРАВНИТЕЛЬНЫЙ АНАЛИЗ ТРЕКОВ ",
+    "full_line": "print(\" СРАВНИТЕЛЬНЫЙ АНАЛИЗ ТРЕКОВ \")"
+  },
+  {
+    "file": "/home/sergey/Documents/configurate/music_evaluator.py",
+    "line": 154,
+    "type": "print",
+    "original": "\\n  РЕЙТИНГ МУЗЫКАЛЬНОСТИ (от гладкого к нервному):",
+    "full_line": "print(\"\\n  РЕЙТИНГ МУЗЫКАЛЬНОСТИ (от гладкого к нервному):\")"
+  },
+  {
+    "file": "/home/sergey/Documents/configurate/music_evaluator.py",
+    "line": 209,
+    "type": "print",
+    "original": "   ОЦЕНКА МУЗЫКАЛЬНОСТИ ПО МЕТОДУ ПАНКРАТОВА",
+    "full_line": "print(\"   ОЦЕНКА МУЗЫКАЛЬНОСТИ ПО МЕТОДУ ПАНКРАТОВА\")"
+  },
+  {
+    "file": "/home/sergey/Documents/configurate/music_evaluator.py",
+    "line": 210,
+    "type": "print",
+    "original": "   Чем ниже тау - тем музыка глаже",
+    "full_line": "print(\"   Чем ниже тау - тем музыка глаже\")"
+  },
+  {
+    "file": "/home/sergey/Documents/configurate/music_evaluator.py",
+    "line": 234,
+    "type": "print",
+    "original": " ИТОГОВЫЙ РЕЙТИНГ МУЗЫКАЛЬНОСТИ ",
+    "full_line": "print(\" ИТОГОВЫЙ РЕЙТИНГ МУЗЫКАЛЬНОСТИ \")"
+  },
+  {
+    "file": "/home/sergey/Documents/configurate/music_evaluator.py",
+    "line": 239,
+    "type": "print",
+    "original": "\\n  🏆 РЕЙТИНГ (от самого гладкого к самому нервному):",
+    "full_line": "print(\"\\n  🏆 РЕЙТИНГ (от самого гладкого к самому нервному):\")"
+  },
+  {
+    "file": "/home/sergey/Documents/configurate/ide_field_edit.py",
+    "line": 19,
+    "type": "setWindowTitle",
+    "original": "Свойства поля (meta.fields)",
+    "full_line": "self.setWindowTitle(\"Свойства поля (meta.fields)\")"
+  },
+  {
+    "file": "/home/sergey/Documents/configurate/ide_field_edit.py",
+    "line": 146,
+    "type": "setWindowTitle",
+    "original": "Свойства поля (служебное) - только для просмотра",
+    "full_line": "self.setWindowTitle(\"Свойства поля (служебное) - только для просмотра\")"
+  },
+  {
+    "file": "/home/sergey/Documents/configurate/ide_field_edit.py",
+    "line": 180,
+    "type": "QMessageBox",
+    "subtype": "warning",
+    "original": "Предупреждение",
+    "full_line": "QMessageBox.warning(self, \"Предупреждение\","
+  },
+  {
+    "file": "/home/sergey/Documents/configurate/ide_field_edit.py",
+    "line": 206,
+    "type": "QMessageBox",
+    "subtype": "information",
+    "original": "Информация",
+    "full_line": "QMessageBox.information(self, \"Информация\","
+  },
+  {
+    "file": "/home/sergey/Documents/configurate/migrate_to_pyside6.py",
+    "line": 94,
+    "type": "print",
+    "original": "🔧 МИГРАЦИЯ С PyQt5 НА PySide6",
+    "full_line": "print(\"🔧 МИГРАЦИЯ С PyQt5 НА PySide6\")"
+  },
+  {
+    "file": "/home/sergey/Documents/configurate/migrate_to_pyside6.py",
+    "line": 96,
+    "type": "print",
+    "original": "\\n⚠️  ВНИМАНИЕ!",
+    "full_line": "print(\"\\n⚠️  ВНИМАНИЕ!\")"
+  },
+  {
+    "file": "/home/sergey/Documents/configurate/migrate_to_pyside6.py",
+    "line": 97,
+    "type": "print",
+    "original": "   1. Перед запуском убедитесь, что PySide6 установлен:",
+    "full_line": "print(\"   1. Перед запуском убедитесь, что PySide6 установлен:\")"
+  },
+  {
+    "file": "/home/sergey/Documents/configurate/migrate_to_pyside6.py",
+    "line": 99,
+    "type": "print",
+    "original": "   2. Рекомендуется сделать резервную копию проекта",
+    "full_line": "print(\"   2. Рекомендуется сделать резервную копию проекта\")"
+  },
+  {
+    "file": "/home/sergey/Documents/configurate/migrate_to_pyside6.py",
+    "line": 100,
+    "type": "print",
+    "original": "   3. Скрипт изменит ВСЕ .py файлы в проекте",
+    "full_line": "print(\"   3. Скрипт изменит ВСЕ .py файлы в проекте\")"
+  },
+  {
+    "file": "/home/sergey/Documents/configurate/migrate_to_pyside6.py",
+    "line": 106,
+    "type": "print",
+    "original": "Миграция отменена.",
+    "full_line": "print(\"Миграция отменена.\")"
+  },
+  {
+    "file": "/home/sergey/Documents/configurate/migrate_to_pyside6.py",
+    "line": 112,
+    "type": "print",
+    "original": "\\n✅ МИГРАЦИЯ ЗАВЕРШЕНА!",
+    "full_line": "print(\"\\n✅ МИГРАЦИЯ ЗАВЕРШЕНА!\")"
+  },
+  {
+    "file": "/home/sergey/Documents/configurate/migrate_to_pyside6.py",
+    "line": 113,
+    "type": "print",
+    "original": "\\n📌 После миграции:",
+    "full_line": "print(\"\\n📌 После миграции:\")"
+  },
+  {
+    "file": "/home/sergey/Documents/configurate/migrate_to_pyside6.py",
+    "line": 114,
+    "type": "print",
+    "original": "   1. Проверьте, что приложение запускается",
+    "full_line": "print(\"   1. Проверьте, что приложение запускается\")"
+  },
+  {
+    "file": "/home/sergey/Documents/configurate/migrate_to_pyside6.py",
+    "line": 115,
+    "type": "print",
+    "original": "   2. Если есть ошибки импорта, проверьте:",
+    "full_line": "print(\"   2. Если есть ошибки импорта, проверьте:\")"
+  },
+  {
+    "file": "/home/sergey/Documents/configurate/migrate_to_pyside6.py",
+    "line": 116,
+    "type": "print",
+    "original": "      - from PySide6.QtCore import Signal (вместо Signal)",
+    "full_line": "print(\"      - from PySide6.QtCore import Signal (вместо Signal)\")"
+  },
+  {
+    "file": "/home/sergey/Documents/configurate/migrate_to_pyside6.py",
+    "line": 117,
+    "type": "print",
+    "original": "      - from PySide6.QtCore import Slot (вместо Slot)",
+    "full_line": "print(\"      - from PySide6.QtCore import Slot (вместо Slot)\")"
+  },
+  {
+    "file": "/home/sergey/Documents/configurate/migrate_to_pyside6.py",
+    "line": 118,
+    "type": "print",
+    "original": "      - from PySide6.QtCore import Property (вместо Property)",
+    "full_line": "print(\"      - from PySide6.QtCore import Property (вместо Property)\")"
+  },
+  {
+    "file": "/home/sergey/Documents/configurate/migrate_to_pyside6.py",
+    "line": 119,
+    "type": "print",
+    "original": "\\n📌 Если что-то пошло не так, откатить изменения можно через Git:",
+    "full_line": "print(\"\\n📌 Если что-то пошло не так, откатить изменения можно через Git:\")"
+  },
+  {
+    "file": "/home/sergey/Documents/configurate/insAccauntBal.py",
+    "line": 199,
+    "type": "print",
+    "original": "ИМПОРТ ПЛАНОВ СЧЕТОВ",
+    "full_line": "print(\"ИМПОРТ ПЛАНОВ СЧЕТОВ\")"
+  },
+  {
+    "file": "/home/sergey/Documents/configurate/insAccauntBal.py",
+    "line": 226,
+    "type": "raise",
+    "original": "Тип сущности CHART_ACCOUNT не найден",
+    "full_line": "raise Exception(\"Тип сущности CHART_ACCOUNT не найден\")"
+  },
+  {
+    "file": "/home/sergey/Documents/configurate/insAccauntBal.py",
+    "line": 233,
+    "type": "print",
+    "original": "ИМПОРТ РСБУ",
+    "full_line": "print(\"ИМПОРТ РСБУ\")"
+  },
+  {
+    "file": "/home/sergey/Documents/configurate/insAccauntBal.py",
+    "line": 254,
+    "type": "print",
+    "original": "ИМПОРТ МСФО",
+    "full_line": "print(\"ИМПОРТ МСФО\")"
+  },
+  {
+    "file": "/home/sergey/Documents/configurate/insAccauntBal.py",
+    "line": 290,
+    "type": "print",
+    "original": "ИТОГО",
+    "full_line": "print(\"ИТОГО\")"
+  },
+  {
+    "file": "/home/sergey/Documents/configurate/insAccauntBal.py",
+    "line": 307,
+    "type": "print",
+    "original": "\\n✅ ГОТОВО!",
+    "full_line": "print(\"\\n✅ ГОТОВО!\")"
+  },
+  {
+    "file": "/home/sergey/Documents/configurate/view_sqlite.py",
+    "line": 72,
+    "type": "setWindowTitle",
+    "original": "Просмотрщик SQLite",
+    "full_line": "self.setWindowTitle(\"Просмотрщик SQLite\")"
+  },
+  {
+    "file": "/home/sergey/Documents/configurate/view_sqlite.py",
+    "line": 131,
+    "type": "QMessageBox",
+    "subtype": "warning",
+    "original": "Ошибка",
+    "full_line": "QMessageBox.warning(self, \"Ошибка\", \"В базе нет таблиц\")"
+  },
+  {
+    "file": "/home/sergey/Documents/configurate/view_sqlite.py",
+    "line": 150,
+    "type": "QMessageBox",
+    "subtype": "critical",
+    "original": "Ошибка",
+    "full_line": "QMessageBox.critical(self, \"Ошибка\", f\"Не удалось прочитать файл:\\n{str(e)}\")"
+  },
+  {
+    "file": "/home/sergey/Documents/configurate/makeJsonToDBFromAutoDoc.py",
+    "line": 23,
+    "type": "print",
+    "original": "НАСТРОЙКА ПОДКЛЮЧЕНИЯ К ЦЕЛЕВОМУ СЕРВЕРУ",
+    "full_line": "print(\"НАСТРОЙКА ПОДКЛЮЧЕНИЯ К ЦЕЛЕВОМУ СЕРВЕРУ\")"
+  },
+  {
+    "file": "/home/sergey/Documents/configurate/makeJsonToDBFromAutoDoc.py",
+    "line": 25,
+    "type": "print",
+    "original": "Оставьте поле пустым для значения по умолчанию\\n",
+    "full_line": "print(\"Оставьте поле пустым для значения по умолчанию\\n\")"
+  },
+  {
+    "file": "/home/sergey/Documents/configurate/makeJsonToDBFromAutoDoc.py",
+    "line": 66,
+    "type": "print",
+    "original": "\\nПроверка подключения...",
+    "full_line": "print(\"\\nПроверка подключения...\")"
+  },
+  {
+    "file": "/home/sergey/Documents/configurate/makeJsonToDBFromAutoDoc.py",
+    "line": 76,
+    "type": "print",
+    "original": "✅ Подключение успешно!",
+    "full_line": "print(\"✅ Подключение успешно!\")"
+  },
+  {
+    "file": "/home/sergey/Documents/configurate/makeJsonToDBFromAutoDoc.py",
+    "line": 115,
+    "type": "print",
+    "original": "Будет использована существующая база данных",
+    "full_line": "print(\"Будет использована существующая база данных\")"
+  },
+  {
+    "file": "/home/sergey/Documents/configurate/makeJsonToDBFromAutoDoc.py",
+    "line": 164,
+    "type": "print",
+    "original": "❌ Нет данных для восстановления!",
+    "full_line": "print(\"❌ Нет данных для восстановления!\")"
+  },
+  {
+    "file": "/home/sergey/Documents/configurate/makeJsonToDBFromAutoDoc.py",
+    "line": 188,
+    "type": "print",
+    "original": "  ✓ Схема создана",
+    "full_line": "print(\"  ✓ Схема создана\")"
+  },
+  {
+    "file": "/home/sergey/Documents/configurate/makeJsonToDBFromAutoDoc.py",
+    "line": 195,
+    "type": "print",
+    "original": "  📋 Создание таблиц...",
+    "full_line": "print(\"  📋 Создание таблиц...\")"
+  },
+  {
+    "file": "/home/sergey/Documents/configurate/makeJsonToDBFromAutoDoc.py",
+    "line": 198,
+    "type": "print",
+    "original": "  ✓ Таблицы созданы",
+    "full_line": "print(\"  ✓ Таблицы созданы\")"
+  },
+  {
+    "file": "/home/sergey/Documents/configurate/makeJsonToDBFromAutoDoc.py",
+    "line": 202,
+    "type": "print",
+    "original": "  📊 Восстановление данных...",
+    "full_line": "print(\"  📊 Восстановление данных...\")"
+  },
+  {
+    "file": "/home/sergey/Documents/configurate/makeJsonToDBFromAutoDoc.py",
+    "line": 232,
+    "type": "print",
+    "original": "  ✓ Данные восстановлены",
+    "full_line": "print(\"  ✓ Данные восстановлены\")"
+  },
+  {
+    "file": "/home/sergey/Documents/configurate/makeJsonToDBFromAutoDoc.py",
+    "line": 236,
+    "type": "print",
+    "original": "  🔑 Создание первичных ключей...",
+    "full_line": "print(\"  🔑 Создание первичных ключей...\")"
+  },
+  {
+    "file": "/home/sergey/Documents/configurate/makeJsonToDBFromAutoDoc.py",
+    "line": 239,
+    "type": "print",
+    "original": "  ✓ Первичные ключи созданы",
+    "full_line": "print(\"  ✓ Первичные ключи созданы\")"
+  },
+  {
+    "file": "/home/sergey/Documents/configurate/makeJsonToDBFromAutoDoc.py",
+    "line": 243,
+    "type": "print",
+    "original": "  🔢 Настройка автоинкремента...",
+    "full_line": "print(\"  🔢 Настройка автоинкремента...\")"
+  },
+  {
+    "file": "/home/sergey/Documents/configurate/makeJsonToDBFromAutoDoc.py",
+    "line": 246,
+    "type": "print",
+    "original": "  ✓ Автоинкремент настроен",
+    "full_line": "print(\"  ✓ Автоинкремент настроен\")"
+  },
+  {
+    "file": "/home/sergey/Documents/configurate/makeJsonToDBFromAutoDoc.py",
+    "line": 250,
+    "type": "print",
+    "original": "  📑 Создание индексов...",
+    "full_line": "print(\"  📑 Создание индексов...\")"
+  },
+  {
+    "file": "/home/sergey/Documents/configurate/makeJsonToDBFromAutoDoc.py",
+    "line": 253,
+    "type": "print",
+    "original": "  ✓ Индексы созданы",
+    "full_line": "print(\"  ✓ Индексы созданы\")"
+  },
+  {
+    "file": "/home/sergey/Documents/configurate/makeJsonToDBFromAutoDoc.py",
+    "line": 257,
+    "type": "print",
+    "original": "  🔗 Применение правил таблиц...",
+    "full_line": "print(\"  🔗 Применение правил таблиц...\")"
+  },
+  {
+    "file": "/home/sergey/Documents/configurate/makeJsonToDBFromAutoDoc.py",
+    "line": 260,
+    "type": "print",
+    "original": "  ✓ Правила применены",
+    "full_line": "print(\"  ✓ Правила применены\")"
+  },
+  {
+    "file": "/home/sergey/Documents/configurate/makeJsonToDBFromAutoDoc.py",
+    "line": 264,
+    "type": "print",
+    "original": "  👁️  Создание представлений...",
+    "full_line": "print(\"  👁️  Создание представлений...\")"
+  },
+  {
+    "file": "/home/sergey/Documents/configurate/makeJsonToDBFromAutoDoc.py",
+    "line": 267,
+    "type": "print",
+    "original": "  ✓ Представления созданы",
+    "full_line": "print(\"  ✓ Представления созданы\")"
+  },
+  {
+    "file": "/home/sergey/Documents/configurate/makeJsonToDBFromAutoDoc.py",
+    "line": 271,
+    "type": "print",
+    "original": "  ⚡ Создание функций...",
+    "full_line": "print(\"  ⚡ Создание функций...\")"
+  },
+  {
+    "file": "/home/sergey/Documents/configurate/makeJsonToDBFromAutoDoc.py",
+    "line": 274,
+    "type": "print",
+    "original": "  ✓ Функции созданы",
+    "full_line": "print(\"  ✓ Функции созданы\")"
+  },
+  {
+    "file": "/home/sergey/Documents/configurate/makeJsonToDBFromAutoDoc.py",
+    "line": 278,
+    "type": "print",
+    "original": "  🔧 Создание процедур...",
+    "full_line": "print(\"  🔧 Создание процедур...\")"
+  },
+  {
+    "file": "/home/sergey/Documents/configurate/makeJsonToDBFromAutoDoc.py",
+    "line": 281,
+    "type": "print",
+    "original": "  ✓ Процедуры созданы",
+    "full_line": "print(\"  ✓ Процедуры созданы\")"
+  },
+  {
+    "file": "/home/sergey/Documents/configurate/makeJsonToDBFromAutoDoc.py",
+    "line": 285,
+    "type": "print",
+    "original": "  ⚙️  Создание триггеров...",
+    "full_line": "print(\"  ⚙️  Создание триггеров...\")"
+  },
+  {
+    "file": "/home/sergey/Documents/configurate/makeJsonToDBFromAutoDoc.py",
+    "line": 288,
+    "type": "print",
+    "original": "  ✓ Триггеры созданы",
+    "full_line": "print(\"  ✓ Триггеры созданы\")"
+  },
+  {
+    "file": "/home/sergey/Documents/configurate/makeJsonToDBFromAutoDoc.py",
+    "line": 293,
+    "type": "print",
+    "original": "✅ ВОССТАНОВЛЕНИЕ УСПЕШНО ЗАВЕРШЕНО!",
+    "full_line": "print(\"✅ ВОССТАНОВЛЕНИЕ УСПЕШНО ЗАВЕРШЕНО!\")"
+  },
+  {
+    "file": "/home/sergey/Documents/configurate/makeJsonToDBFromAutoDoc.py",
+    "line": 306,
+    "type": "print",
+    "original": "ИМПОРТ БАЗЫ ДАННЫХ ИЗ JSON ЭКСПОРТА",
+    "full_line": "print(\"ИМПОРТ БАЗЫ ДАННЫХ ИЗ JSON ЭКСПОРТА\")"
+  },
+  {
+    "file": "/home/sergey/Documents/configurate/makeJsonToDBFromAutoDoc.py",
+    "line": 330,
+    "type": "print",
+    "original": "ВНИМАНИЕ! Будет выполнено восстановление базы данных.",
+    "full_line": "print(\"ВНИМАНИЕ! Будет выполнено восстановление базы данных.\")"
+  },
+  {
+    "file": "/home/sergey/Documents/configurate/makeJsonToDBFromAutoDoc.py",
+    "line": 335,
+    "type": "print",
+    "original": "Операция отменена",
+    "full_line": "print(\"Операция отменена\")"
+  },
+  {
+    "file": "/home/sergey/Documents/configurate/SYSrestoreBase.py",
+    "line": 24,
+    "type": "print",
+    "original": "Ошибка: pg_restore не найден. Установите PostgreSQL client tools.",
+    "full_line": "print(\"Ошибка: pg_restore не найден. Установите PostgreSQL client tools.\")"
+  },
+  {
+    "file": "/home/sergey/Documents/configurate/SYSrestoreBase.py",
+    "line": 99,
+    "type": "print",
+    "original": "ПРОВЕРКА ПЕРЕД ВОССТАНОВЛЕНИЕМ",
+    "full_line": "print(\"ПРОВЕРКА ПЕРЕД ВОССТАНОВЛЕНИЕМ\")"
+  },
+  {
+    "file": "/home/sergey/Documents/configurate/SYSrestoreBase.py",
+    "line": 113,
+    "type": "print",
+    "original": "ВОССТАНОВЛЕНИЕ БАЗЫ",
+    "full_line": "print(\"ВОССТАНОВЛЕНИЕ БАЗЫ\")"
+  },
+  {
+    "file": "/home/sergey/Documents/configurate/SYSrestoreBase.py",
+    "line": 162,
+    "type": "print",
+    "original": "ВОССТАНОВЛЕНИЕ УСПЕШНО ЗАВЕРШЕНО!",
+    "full_line": "print(\"ВОССТАНОВЛЕНИЕ УСПЕШНО ЗАВЕРШЕНО!\")"
+  },
+  {
+    "file": "/home/sergey/Documents/configurate/SYSrestoreBase.py",
+    "line": 176,
+    "type": "print",
+    "original": "\\nВосстановленные схемы:",
+    "full_line": "print(\"\\nВосстановленные схемы:\")"
+  },
+  {
+    "file": "/home/sergey/Documents/configurate/main_verification.py",
+    "line": 12,
+    "type": "print",
+    "original": "   СТЕНД СИНХРОННОЙ ПОСТКВАНТОВОЙ СЕССИИ ERP MOZART: ВАСЯ И ПЕТЯ",
+    "full_line": "print(\"   СТЕНД СИНХРОННОЙ ПОСТКВАНТОВОЙ СЕССИИ ERP MOZART: ВАСЯ И ПЕТЯ\")"
+  },
+  {
+    "file": "/home/sergey/Documents/configurate/main_verification.py",
+    "line": 30,
+    "type": "print",
+    "original": " СЦЕНАРИЙ А: ЛЕГИТИМНЫЙ ОБМЕН ДАННЫМИ (Ключевая пара верна)",
+    "full_line": "print(\" СЦЕНАРИЙ А: ЛЕГИТИМНЫЙ ОБМЕН ДАННЫМИ (Ключевая пара верна)\")"
+  },
+  {
+    "file": "/home/sergey/Documents/configurate/main_verification.py",
+    "line": 38,
+    "type": "print",
+    "original": ">>> УСПЕХ: Носитель ГЛАДКИЙ (Музыка узнана)! Верификация пройдена.",
+    "full_line": "print(\">>> УСПЕХ: Носитель ГЛАДКИЙ (Музыка узнана)! Верификация пройдена.\")"
+  },
+  {
+    "file": "/home/sergey/Documents/configurate/main_verification.py",
+    "line": 41,
+    "type": "print",
+    "original": ">>> БРАК: Слышна какофония шума. Пакет сброшен.",
+    "full_line": "print(\">>> БРАК: Слышна какофония шума. Пакет сброшен.\")"
+  },
+  {
+    "file": "/home/sergey/Documents/configurate/main_verification.py",
+    "line": 44,
+    "type": "print",
+    "original": " СЦЕНАРИЙ Б: ПОПЫТКА ВЗЛОМА / ДЕФЕКТНЫЙ ЗАКРЫТЫЙ КЛЮЧ (Ошибка в 1 знаке)",
+    "full_line": "print(\" СЦЕНАРИЙ Б: ПОПЫТКА ВЗЛОМА / ДЕФЕКТНЫЙ ЗАКРЫТЫЙ КЛЮЧ (Ошибка в 1 знаке)\")"
+  },
+  {
+    "file": "/home/sergey/Documents/configurate/main_verification.py",
+    "line": 51,
+    "type": "print",
+    "original": ">>> УСПЕХ АВТОМАТА: Зафиксирована НЕГЛАДКАЯ КАКОФОНИЯ (Поверхность уничтожена)!",
+    "full_line": "print(\">>> УСПЕХ АВТОМАТА: Зафиксирована НЕГЛАДКАЯ КАКОФОНИЯ (Поверхность уничтожена)!\")"
+  },
+  {
+    "file": "/home/sergey/Documents/configurate/main_verification.py",
+    "line": 52,
+    "type": "print",
+    "original": ">>> ДЕЙСТВИЕ: Приложение ПЕТЯ разорвало сессию. Команда на ПОВТОРЯЕМСЯ отправлена.",
+    "full_line": "print(\">>> ДЕЙСТВИЕ: Приложение ПЕТЯ разорвало сессию. Команда на ПОВТОРЯЕМСЯ отправлена.\")"
+  },
+  {
+    "file": "/home/sergey/Documents/configurate/main_verification.py",
+    "line": 53,
+    "type": "print",
+    "original": ">>> Злоумышленник остался с дыркой от бублика.",
+    "full_line": "print(\">>> Злоумышленник остался с дыркой от бублика.\")"
+  },
+  {
+    "file": "/home/sergey/Documents/configurate/main_verification.py",
+    "line": 55,
+    "type": "print",
+    "original": ">>> Критическая ошибка: дыра в безопасности, софт пропустил мусор.",
+    "full_line": "print(\">>> Критическая ошибка: дыра в безопасности, софт пропустил мусор.\")"
+  },
+  {
+    "file": "/home/sergey/Documents/configurate/openDBF.py",
+    "line": 77,
+    "type": "setWindowTitle",
+    "original": "Просмотрщик DBF",
+    "full_line": "self.setWindowTitle(\"Просмотрщик DBF\")"
+  },
+  {
+    "file": "/home/sergey/Documents/configurate/openDBF.py",
+    "line": 155,
+    "type": "QMessageBox",
+    "subtype": "critical",
+    "original": "Ошибка",
+    "full_line": "QMessageBox.critical(self, \"Ошибка\", f\"Не удалось прочитать файл:\\n{str(e)}\")"
+  },
+  {
+    "file": "/home/sergey/Documents/configurate/controls/reference.py",
+    "line": 161,
+    "type": "QMessageBox",
+    "subtype": "warning",
+    "original": "Ошибка",
+    "full_line": "QMessageBox.warning(self, \"Ошибка\", \"Не указан entity_alias для Reference\")"
+  },
+  {
+    "file": "/home/sergey/Documents/configurate/controls/reference.py",
+    "line": 166,
+    "type": "QMessageBox",
+    "subtype": "information",
+    "original": "Выбор",
+    "full_line": "QMessageBox.information(self, \"Выбор\", f\"Открыть форму выбора для {self._entity_alias}\")"
+  },
+  {
+    "file": "/home/sergey/Documents/configurate/tabs/data_view_tab.py",
+    "line": 88,
+    "type": "show_xxx",
+    "subtype": "show_info",
+    "original": "У сущности нет полей",
+    "full_line": "self.show_info(\"У сущности нет полей\")"
+  },
+  {
+    "file": "/home/sergey/Documents/configurate/tabs/relations_tab.py",
+    "line": 15,
+    "type": "setWindowTitle",
+    "original": "Тип связи",
+    "full_line": "self.setWindowTitle(\"Тип связи\")"
+  },
+  {
+    "file": "/home/sergey/Documents/configurate/tabs/relations_tab.py",
+    "line": 48,
+    "type": "setWindowTitle",
+    "original": "Правило связи",
+    "full_line": "self.setWindowTitle(\"Правило связи\")"
+  },
+  {
+    "file": "/home/sergey/Documents/configurate/tabs/relations_tab.py",
+    "line": 182,
+    "type": "show_xxx",
+    "subtype": "show_warning",
+    "original": "Выберите тип связи",
+    "full_line": "self.show_warning(\"Выберите тип связи\")"
+  },
+  {
+    "file": "/home/sergey/Documents/configurate/tabs/relations_tab.py",
+    "line": 205,
+    "type": "show_xxx",
+    "subtype": "show_warning",
+    "original": "Выберите тип связи",
+    "full_line": "self.show_warning(\"Выберите тип связи\")"
+  },
+  {
+    "file": "/home/sergey/Documents/configurate/tabs/relations_tab.py",
+    "line": 209,
+    "type": "QMessageBox",
+    "subtype": "question",
+    "original": "Подтверждение",
+    "full_line": "if QMessageBox.question(self, \"Подтверждение\", \"Удалить тип связи?\") == QMessageBox.Yes:"
+  },
+  {
+    "file": "/home/sergey/Documents/configurate/tabs/relations_tab.py",
+    "line": 255,
+    "type": "show_xxx",
+    "subtype": "show_warning",
+    "original": "Выберите правило",
+    "full_line": "self.show_warning(\"Выберите правило\")"
+  },
+  {
+    "file": "/home/sergey/Documents/configurate/tabs/relations_tab.py",
+    "line": 283,
+    "type": "show_xxx",
+    "subtype": "show_warning",
+    "original": "Выберите правило",
+    "full_line": "self.show_warning(\"Выберите правило\")"
+  },
+  {
+    "file": "/home/sergey/Documents/configurate/tabs/relations_tab.py",
+    "line": 287,
+    "type": "QMessageBox",
+    "subtype": "question",
+    "original": "Подтверждение",
+    "full_line": "if QMessageBox.question(self, \"Подтверждение\", \"Удалить правило?\") == QMessageBox.Yes:"
+  },
+  {
+    "file": "/home/sergey/Documents/configurate/tabs/entities_tab.py",
+    "line": 447,
+    "type": "show_xxx",
+    "subtype": "show_error",
+    "original": "Не удалось создать копию",
+    "full_line": "self.show_error(\"Не удалось создать копию\")"
+  },
+  {
+    "file": "/home/sergey/Documents/configurate/tabs/entities_tab.py",
+    "line": 568,
+    "type": "QMessageBox",
+    "subtype": "information",
+    "original": "Системные политики применены",
+    "full_line": "QMessageBox.information(self, \"Системные политики применены\", \"\\n\".join(messages))"
+  },
+  {
+    "file": "/home/sergey/Documents/configurate/tabs/balance_units_tab.py",
+    "line": 147,
+    "type": "show_xxx",
+    "subtype": "show_warning",
+    "original": "Выберите запись для редактирования",
+    "full_line": "self.show_warning(\"Выберите запись для редактирования\")"
+  },
+  {
+    "file": "/home/sergey/Documents/configurate/tabs/balance_units_tab.py",
+    "line": 169,
+    "type": "show_xxx",
+    "subtype": "show_warning",
+    "original": "Выберите запись для удаления",
+    "full_line": "self.show_warning(\"Выберите запись для удаления\")"
+  },
+  {
+    "file": "/home/sergey/Documents/configurate/tabs/balance_units_tab.py",
+    "line": 171,
+    "type": "QMessageBox",
+    "subtype": "question",
+    "original": "Подтверждение",
+    "full_line": "if QMessageBox.question(self, \"Подтверждение\", \"Удалить выбранную запись?\") == QMessageBox.Yes:"
+  },
+  {
+    "file": "/home/sergey/Documents/configurate/tabs/entity_subtabs/import_engine.py",
+    "line": 28,
+    "type": "setWindowTitle",
+    "original": "Проверка источника и сопоставление полей",
+    "full_line": "self.setWindowTitle(\"Проверка источника и сопоставление полей\")"
+  },
+  {
+    "file": "/home/sergey/Documents/configurate/tabs/entity_subtabs/import_engine.py",
+    "line": 97,
+    "type": "QMessageBox",
+    "subtype": "warning",
+    "original": "Ошибка",
+    "full_line": "QMessageBox.warning(self, \"Ошибка\", \"Укажите путь к источнику\")"
+  },
+  {
+    "file": "/home/sergey/Documents/configurate/tabs/entity_subtabs/import_engine.py",
+    "line": 108,
+    "type": "QMessageBox",
+    "subtype": "critical",
+    "original": "Ошибка",
+    "full_line": "QMessageBox.critical(self, \"Ошибка\", \"Неподдерживаемый формат\")"
+  },
+  {
+    "file": "/home/sergey/Documents/configurate/tabs/entity_subtabs/import_engine.py",
+    "line": 111,
+    "type": "QMessageBox",
+    "subtype": "critical",
+    "original": "Ошибка",
+    "full_line": "QMessageBox.critical(self, \"Ошибка\", f\"Не удалось прочитать источник: {str(e)}\")"
+  },
+  {
+    "file": "/home/sergey/Documents/configurate/tabs/entity_subtabs/import_engine.py",
+    "line": 115,
+    "type": "QMessageBox",
+    "subtype": "warning",
+    "original": "Предупреждение",
+    "full_line": "QMessageBox.warning(self, \"Предупреждение\", \"Не удалось получить поля источника\")"
+  },
+  {
+    "file": "/home/sergey/Documents/configurate/tabs/entity_subtabs/import_engine.py",
+    "line": 152,
+    "type": "QMessageBox",
+    "subtype": "information",
+    "original": "Информация",
+    "full_line": "QMessageBox.information(self, \"Информация\", f\"Найдено {len(self.source_fields)} полей в источнике\")"
+  },
+  {
+    "file": "/home/sergey/Documents/configurate/tabs/entity_subtabs/import_engine.py",
+    "line": 333,
+    "type": "QMessageBox",
+    "subtype": "warning",
+    "original": "Внимание",
+    "full_line": "QMessageBox.warning(self, \"Внимание\", \"Сначала выберите сущность\")"
+  },
+  {
+    "file": "/home/sergey/Documents/configurate/tabs/entity_subtabs/import_engine.py",
+    "line": 342,
+    "type": "QMessageBox",
+    "subtype": "information",
+    "original": "Информация",
+    "full_line": "QMessageBox.information(self, \"Информация\", \"Сопоставление полей выполнено. Нажмите 'Сохранить настройки' для сохранения.\")"
+  },
+  {
+    "file": "/home/sergey/Documents/configurate/tabs/entity_subtabs/import_engine.py",
+    "line": 346,
+    "type": "QMessageBox",
+    "subtype": "warning",
+    "original": "Внимание",
+    "full_line": "QMessageBox.warning(self, \"Внимание\", \"Сначала выберите сущность\")"
+  },
+  {
+    "file": "/home/sergey/Documents/configurate/tabs/entity_subtabs/import_engine.py",
+    "line": 349,
+    "type": "QMessageBox",
+    "subtype": "warning",
+    "original": "Внимание",
+    "full_line": "QMessageBox.warning(self, \"Внимание\", \"Сначала выполните проверку источника и сопоставление полей\")"
+  },
+  {
+    "file": "/home/sergey/Documents/configurate/tabs/entity_subtabs/import_engine.py",
+    "line": 358,
+    "type": "QMessageBox",
+    "subtype": "warning",
+    "original": "Ошибка",
+    "full_line": "QMessageBox.warning(self, \"Ошибка\", \"Укажите путь к источнику\")"
+  },
+  {
+    "file": "/home/sergey/Documents/configurate/tabs/entity_subtabs/import_engine.py",
+    "line": 416,
+    "type": "QMessageBox",
+    "subtype": "information",
+    "original": "Информация",
+    "full_line": "QMessageBox.information(self, \"Информация\", \"Настройки импорта сохранены\")"
+  },
+  {
+    "file": "/home/sergey/Documents/configurate/tabs/entity_subtabs/import_engine.py",
+    "line": 419,
+    "type": "QMessageBox",
+    "subtype": "critical",
+    "original": "Ошибка",
+    "full_line": "QMessageBox.critical(self, \"Ошибка\", f\"Не удалось сохранить настройки: {str(e)}\")"
+  },
+  {
+    "file": "/home/sergey/Documents/configurate/tabs/entity_subtabs/import_engine.py",
+    "line": 423,
+    "type": "QMessageBox",
+    "subtype": "warning",
+    "original": "Внимание",
+    "full_line": "QMessageBox.warning(self, \"Внимание\", \"Сначала сохраните настройки импорта\")"
+  },
+  {
+    "file": "/home/sergey/Documents/configurate/tabs/entity_subtabs/import_engine.py",
+    "line": 429,
+    "type": "QMessageBox",
+    "subtype": "critical",
+    "original": "Ошибка",
+    "full_line": "QMessageBox.critical(self, \"Ошибка\", \"Не удалось загрузить настройки импорта\")"
+  },
+  {
+    "file": "/home/sergey/Documents/configurate/tabs/entity_subtabs/import_engine.py",
+    "line": 439,
+    "type": "QMessageBox",
+    "subtype": "information",
+    "original": "Информация",
+    "full_line": "QMessageBox.information(self, \"Информация\", \"Импорт успешно завершён\")"
+  },
+  {
+    "file": "/home/sergey/Documents/configurate/tabs/entity_subtabs/import_engine.py",
+    "line": 442,
+    "type": "QMessageBox",
+    "subtype": "critical",
+    "original": "Ошибка",
+    "full_line": "QMessageBox.critical(self, \"Ошибка\", f\"Импорт не удался: {str(e)}\")"
+  },
+  {
+    "file": "/home/sergey/Documents/configurate/tabs/user_roles/context_tab.py",
+    "line": 102,
+    "type": "show_xxx",
+    "subtype": "show_error",
+    "original": "Нельзя назначить пользователю две интерфейсные роли в одной балансовой единице",
+    "full_line": "self.show_error(\"Нельзя назначить пользователю две интерфейсные роли в одной балансовой единице\")"
+  },
+  {
+    "file": "/home/sergey/Documents/configurate/tabs/user_roles/context_tab.py",
+    "line": 143,
+    "type": "show_xxx",
+    "subtype": "show_error",
+    "original": "Нельзя назначить пользователю две интерфейсные роли в одной балансовой единице",
+    "full_line": "self.show_error(\"Нельзя назначить пользователю две интерфейсные роли в одной балансовой единице\")"
+  },
+  {
+    "file": "/home/sergey/Documents/configurate/mozart_import/gui/progress_dialog.py",
+    "line": 15,
+    "type": "setWindowTitle",
+    "original": "Импорт данных",
+    "full_line": "self.setWindowTitle(\"Импорт данных\")"
+  },
+  {
+    "file": "/home/sergey/Documents/configurate/widgets/reference_selector.py",
+    "line": 15,
+    "type": "setWindowTitle",
+    "original": "Выбор значения",
+    "full_line": "self.setWindowTitle(\"Выбор значения\")"
+  },
+  {
+    "file": "/home/sergey/Documents/configurate/widgets/reference_editor.py",
+    "line": 55,
+    "type": "QMessageBox",
+    "subtype": "warning",
+    "original": "Ошибка",
+    "full_line": "QMessageBox.warning(self, \"Ошибка\", \"Не указана таблица-источник\")"
+  }
+]

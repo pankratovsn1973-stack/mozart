@@ -1,0 +1,805 @@
+
+# 2026-06-04 20:45:15.677307
++y
+
+# 2026-06-04 20:46:52.070024
++/add controls/textbox.py controls/__init__.py controls/optiongroup.py
+
+# 2026-06-04 20:47:46.792755
++1. В файле textbox.py добавь недостающий сигнал value_changed = Signal(str) на уровне класса, чтобы убрать ошибку AttributeError в консоли IDE.
++2. Элемент optiongroup.py сейчас ошибочно выглядит как текстовое поле ввода. Перепиши его так, чтобы он наследовался от QGroupBox и динамически выводил стандартные переключатели QRadioButton на основе списка из self._options.
+
+# 2026-06-04 20:49:01.633806
++exit
+
+# 2026-06-04 20:49:08.536577
++aider --model openrouter/google/gemini-2.5-flash:free
+
+# 2026-06-04 20:50:03.065354
++/add controls/textbox.py controls/__init__.py controls/optiongroup.py
+
+# 2026-06-04 20:50:17.343264
++1. В файле textbox.py добавь недостающий сигнал value_changed = Signal(str) на уровне класса, чтобы убрать ошибку AttributeError в консоли IDE.
++2. Элемент optiongroup.py сейчас ошибочно выглядит как текстовое поле ввода. Перепиши его так, чтобы он наследовался от QGroupBox и динамически выводил стандартные переключатели QRadioButton на основе списка из self._options.
+
+# 2026-06-04 20:51:36.808552
++/add controls/textbox.py controls/__init__.py controls/optiongroup.py
++
+
+# 2026-06-04 20:51:53.330757
++1. В файле controls/textbox.py добавь недостающий сигнал value_changed = Signal(str) на уровне класса, чтобы убрать ошибку AttributeError в консоли IDE.
++2. Элемент controls/optiongroup.py сейчас ошибочно выглядит как текстовое поле ввода. Перепиши его так, чтобы он наследовался от QGroupBox и динамически выводил стандартные переключатели QRadioButton на основе списка из self._options.
+
+# 2026-06-04 21:29:45.867880
++n
+
+# 2026-06-04 21:30:02.171093
++/add controls/container.py
+
+# 2026-06-04 21:30:23.956403
++Сейчас элемент controls/container.py выглядит на интерактивной сцене как плоский пустой лист бумаги, потому что это обычный QWidget. 
++Перепиши его на PySide6 так, чтобы он наследовался от QGroupBox, имел аккуратную рельефную рамку (border: 1px solid #b0b0b0), внутренний вертикальный макет QVBoxLayout для дочерних элементов и текстовый заголовок "Группа элементов" по умолчанию.
+
+# 2026-06-04 21:58:53.698230
++/add widgets/form_designer_old/form_scene.py widgets/form_designer_old/control_item.py widgets/form_designer_old/main_widget.py widgets/form_designer_old/designer_widget.py
++
+
+# 2026-06-04 22:01:05.580165
++Выполни комплексный рефакторинг визуального редактора форм в каталоге form_designer_old, внедрив следующие три архитектурные задачи. Пиши чистый код на PySide6, сохраняя текущую бизнес-логику.
++
++1. УДАЛЕНИЕ КОНТРОЛОВ:
++- В form_scene.py перехватывай нажатие клавиши Key_Delete. Если есть выделенный ControlItem, безопасно удаляй его со сцены и из словаря self.controls.
++- Реализуй контекстное меню (QMenu) при нажатии правой кнопки мыши (Qt.RightButton) над ControlItem. В меню должен быть пункт "Удалить element" (связанный с логикой удаления) и пункт "Свойства" (переводящий фокус на PropertyEditor).
++
++2. МНОЖЕСТВЕННОЕ ВЫДЕЛЕНИЕ И ГРУППОВОЕ ПЕРЕМЕЩЕНИЕ:
++- Настрой в QGraphicsScene режим выделения рамкой (RubberBand). Позволь пользователю зажимать ЛКМ на пустом месте бланка, тянуть мышь и выделять группу контролов одновременно.
++- Перепиши логику mousePressEvent, mouseMoveEvent и mouseReleaseEvent в control_item.py и form_scene.py так, чтобы при выделении нескольких ControlItem и перемещении одного из них мышкой — вся выделенная группа двигалась синхронно, сохраняя свои относительные дистанции и корректно учитывая snap_point (привязку к сетке) для каждого элемента. При групповом сдвиге отправляй сигналы геометрии для каждого измененного элемента.
++
++3. ТИП ФОРМЫ И ИНТЕРФЕЙСНЫЕ РОЛИ:
++- Добавь в свойства формы (словарь self._form_properties в designer_widget.py / main_widget.py) новое строковое свойство "form_type" со значениями: 'grid' (табличная), 'edit' (карточка редактирования), 'main_interface' (главная форма интерфейса).
++- Если выбрано свойство 'main_interface', добавь в свойства формы выпадающий список или строку "interface_role" (роль интерфейса) для выбора системной роли. 
++- Напиши логику: если форма является 'main_interface', то при инициализации бланка на сцене (form_background.py) под TitleBar должен динамически генерироваться и отображаться макет главного меню (QMenuBar), симулирующий интерфейс этой роли. Если тип меняется обратно, меню должно скрываться.
++
++По окончании работы убедись, что код не содержит синтаксических ошибок, импортированы все необходимые классы (QMenu, QAction, QMenuBar) и проект Mozart успешно запускается.
++
+
+# 2026-06-04 22:11:09.009208
++y
+
+# 2026-06-04 22:13:35.292299
++В файле widgets/form_designer_old/form_background.py исправь ошибку импорта: замени неверную строку импорта tool_bar на правильную: from .toolbar_bar import ToolBarBar (или ToolBarBar, в зависимости от того, как он там использовался ранее).
++Используйте код с осторожностью.💡 Как исправить вручную (если Аидер закрыт):Если вы уже вышли из Аидера, просто откройте файл:📂 /home/sergey/Documents/configurate/widgets/form_designer_old/form_background.pyНайдите в самом верху (в районе 9-й строки) ошибочный импорт:pythonfrom .tool_bar import ToolBar
++Используйте код с осторожностью.И замените его на ваш оригинальный рабочий импорт, который был там изначально:pythonfrom .toolbar_bar import ToolBarBar
++Используйте код с осторожностью.(Также проверьте по тексту файла: если ИИ ниже по коду вместо ToolBarBar написал ToolBar, замените имя класса на ToolBarBar).Сохраните файл и запускайте проект заново через python ide_main.py — эта ошибка исчезнет, и мы продвинемся к запуску формы!Напишите, какой путь выбрали и пропустила ли система импорт после исправления?
+
+# 2026-06-04 22:15:57.223492
++Traceback (most recent call last):
++  File "/home/sergey/Documents/configurate/ide_main.py", line 11, in <module>
++    from ide_db_work import DBWorkDialog
++  File "/home/sergey/Documents/configurate/ide_db_work.py", line 8, in <module>
++    from tabs import (
++  File "/home/sergey/Documents/configurate/tabs/__init__.py", line 12, in <module>
++    from .forms_tab import FormsTab
++  File "/home/sergey/Documents/configurate/tabs/forms_tab.py", line 13, in <module>
++    from .forms import FormPropertiesDialog
++  File "/home/sergey/Documents/configurate/tabs/forms/__init__.py", line 4, in <module>
++    from .form_properties_dialog import FormPropertiesDialog
++  File "/home/sergey/Documents/configurate/tabs/forms/form_properties_dialog.py", line 13, in <module>
++    from widgets.visual_form_editor import VisualFormEditor
++  File "/home/sergey/Documents/configurate/widgets/visual_form_editor.py", line 5, in <module>
++    from .form_designer_old.main_widget import FormDesigner as VisualFormEditor
++  File "/home/sergey/Documents/configurate/widgets/form_designer_old/__init__.py", line 4, in <module>
++    from .main_widget import FormDesigner
++  File "/home/sergey/Documents/configurate/widgets/form_designer_old/main_widget.py", line 8, in <module>
++    from .form_scene import FormDesignerScene
++  File "/home/sergey/Documents/configurate/widgets/form_designer_old/form_scene.py", line 8, in <module>
++    from .form_background import FormBackground
++  File "/home/sergey/Documents/configurate/widgets/form_designer_old/form_background.py", line 10, in <module>
++    from .status_bar import StatusBar
++ModuleNotFoundError: No module named 'widgets.form_designer_old.status_bar'
++
++Process finished with exit code 1
++
+
+# 2026-06-04 22:17:14.200210
++n
+
+# 2026-06-04 22:17:33.345232
++Не нужно создавать новые файлы. В моем проекте файлы периферии называются 'toolbar_bar.py' и 'statusbar_bar.py', а классы внутри них — 'ToolBarBar' и 'StatusBarBar'. Исправь неверные импорты внутри widgets/form_designer_old/form_background.py, используя именно эти существующие файлы и классы, и удали оттуда импорты несуществующих модулей .tool_bar и .status_bar.
++
+
+# 2026-06-04 22:19:27.082464
++У меня упала ошибка инициализации макета бланка формы:
++Traceback (most recent call last):
++  File "/home/sergey/Documents/configurate/widgets/form_designer_old/form_background.py", line 39, in update_layout
++    tool_bar_height = self.tool_bar.get_height() if self.tool_bar else 32
++                      ^^^^^^^^^^^^^^^^^^^^^^^^
++AttributeError: 'ToolBarBar' object has no attribute 'get_height'. Did you mean: 'bar_height'?
++
++Исправь файл widgets/form_designer_old/form_background.py. Вместо вызова метода .get_height() используй существующее свойство .bar_height у объектов тулбара и подвала (проверь также аналогичные вызовы для status_bar и title_bar, если они там есть, заменив их на .bar_height, если методы get_height() у них отсутствуют).
++
+
+# 2026-06-04 22:21:14.053462
++Опять конфликт методов панелей: у TitleBar нет свойства bar_height, но есть метод get_height(). У ToolBarBar и StatusBarBar наоборот — используется свойство bar_height. 
++
++Traceback ошибки:
++  File "/home/sergey/Documents/configurate/widgets/form_designer_old/form_background.py", line 38, in update_layout
++    title_bar_height = self.title_bar.bar_height if self.title_bar else 32
++                       ^^^^^^^^^^^^^^^^^^^^^^^^^
++AttributeError: 'TitleBar' object has no attribute 'bar_height'. Did you mean: 'get_height'?
++
++Исправь метод update_layout (и любые другие методы позиционирования, например _sync_bars_geometry) в файле widgets/form_designer_old/form_background.py, чтобы для title_bar вызывался метод .get_height(), а для tool_bar и status_bar считывалось свойство .bar_height.
++
+
+# 2026-06-04 22:23:10.462882
++Упал следующий AttributeError при попытке обновить размеры заголовка формы:
++
++Traceback (most recent call last):
++  File "/home/sergey/Documents/configurate/widgets/form_designer_old/form_background.py", line 45, in update_layout
++    self.title_bar.update_tracks(self.width)
++    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
++AttributeError: 'TitleBar' object has no attribute 'update_tracks'
++
++В файле widgets/form_designer_old/form_background.py удали вызов метода .update_tracks(self.width) у объекта title_bar. Вместо него для изменения ширины заголовка используй стандартные методы Qt Graphics Item, если они нужны (например, .setMinimumWidth(self.width) и .setMaximumWidth(self.width)), либо просто убери эту строку, если TitleBar уже является дочерним элементом и масштабируется через компоновщик.
++
+
+# 2026-06-04 22:25:25.831781
++Теперь упало на тулбаре по той же причине:
++
++Traceback (most recent call last):
++  File "/home/sergey/Documents/configurate/widgets/form_designer_old/form_background.py", line 111, in update_layout
++    self.tool_bar.update_tracks(self.width)
++    ^^^^^^^^^^^^^^^^^^^^^^^^^^^
++AttributeError: 'ToolBarBar' object has no attribute 'update_tracks'
++
++В файле widgets/form_designer_old/form_background.py полностью найди и удали вызовы метода .update_tracks(self.width) для ВСЕХ объектов: и для tool_bar, и для status_bar (если он там есть). Эти методы вымышленные, убирай их.
++
+
+# 2026-06-04 22:31:01.692285
++Внедренные ночные фичи вызвали два регрессионных бага. Давай исправим их:
++
++1. БАГ С ПОЗИЦИЕЙ КОНТРОЛОВ ПРИ РЕСАЙЗЕ ФОРМЫ:
++При интерактивном изменении размеров бланка формы дочерние элементы управления (ControlItem) выходят за её границы и не корректируют свои позиции. Мы уже исправляли этот баг ранее через перебор дочерних элементов.
++- В файле widgets/form_designer_old/form_background.py внутри метода set_size (или update_layout) добавь обязательный цикл перебора всех дочерних элементов через self.childItems().
++- Для каждого дочернего элемента, у которого есть свойство 'control_widget', рассчитывай новые максимальные координаты:
++  max_x = self.width - item.control_widget.width()
++  max_y = self.height - tool_bar_height - status_bar_height - item.control_widget.height()
++- Если локальные координаты элемента превышают эти значения или уходят меньше нуля, принудительно корректируй их через item.setPos(new_x, new_y) и вызывай item._emit_geometry().
++
++2. БАГ С МНОЖЕСТВЕННЫМ ВЫДЕЛЕНИЕМ (RUBBERBAND):
++Выделение рамкой захватывает ровно один элемент, групповой выбор не работает.
++- В файле widgets/form_designer_old/form_scene.py проверь обработчики мыши mousePressEvent и mouseReleaseEvent. При протягивании рамки выделения (RubberBand) сцена должна использовать метод self.setSelectionArea() или перебирать элементы, попавшие в область рамки, и вызывать для КАЖДОГО из них метод set_selected(True).
++- В методе mousePressEvent сцены, если клик происходит по пустому месту холста, старое выделение должно сбрасываться через clear_selection(), но запускаться режим RubberBand для выбора группы контролов.
++
+
+# 2026-06-04 22:32:53.590288
++Визуальная ошибка: элементы title_bar (заголовок) и status_bar (подвал) отображаются обрезанными ровно до середины бланка формы. Их ширина не синхронизируется с реальной шириной формы.
++
++В файле widgets/form_designer_old/form_background.py внутри метода update_layout (и везде, где происходит изменение размеров) добавь принудительную установку ширины для ВСЕХ трех панелей:
++1. self.title_bar.setMinimumWidth(self.width)
++2. self.title_bar.setMaximumWidth(self.width)
++3. self.tool_bar.setMinimumWidth(self.width)
++4. self.tool_bar.setMaximumWidth(self.width)
++5. self.status_bar.setMinimumWidth(self.width)
++6. self.status_bar.setMaximumWidth(self.width)
++
++Также убедись, что координата X для всех трех панелей принудительно выставляется в 0 через метод .setPos(0, ...), чтобы они не съезжали вбок.
++
+
+# 2026-06-04 22:38:00.379473
++Логика множественного выделения рамкой (RubberBand) работает некорректно: притормаживает и выделяет только один элемент. Исправь это архитектурно в трех файлах:
++
++1. В файле widgets/form_designer_old/control_item.py:
++- В конструкторе __init__ добавь отключение обработки событий мыши для самого вложенного виджета, чтобы он не конфликтовал со сценой в режиме дизайна:
++  self.widget().setAttribute(Qt.WA_TransparentForMouseEvents, True)
++- Убедись, что флаги элемента выставлены правильно:
++  self.setFlag(QGraphicsItem.ItemIsSelectable, True)
++  self.setFlag(QGraphicsItem.ItemIsMovable, True)
++
++2. В файле widgets/form_designer_old/form_scene.py:
++- Полностью перепиши mousePressEvent, mouseMoveEvent и mouseReleaseEvent для работы с RubberBand.
++- В mousePressEvent: если клик по пустому месту или по фону бланка, вызывай clear_selection(), устанавливай режим выделения на сцене и передавай базовое событие super().mousePressEvent(event).
++- В mouseReleaseEvent: после того как пользователь отпустил мышь, собери ВСЕ элементы, попавшие в выделение через self.selectedItems(). Пробегись по ним циклом и для каждого ControlItem, попавшего в список, вызови метод .set_selected(True), чтобы вокруг них зажглись маркеры ресайза.
++
++3. В файле widgets/form_designer_old/form_view.py (вьювер сцены):
++- Включи оптимизацию отрисовки и кэширование, чтобы убрать любые тормоза при протягивании мыши:
++  self.setDragMode(QGraphicsView.RubberBandDrag)
++  self.setRenderHint(QPainter.Antialiasing, True)
++  self.setViewportUpdateMode(QGraphicsView.FullViewportUpdate)
++
+
+# 2026-06-04 22:42:02.334550
++y
+
+# 2026-06-04 22:44:04.073062
++В файле widgets/form_designer_old/form_scene.py перепиши метод mouseReleaseEvent. Вьювер сбрасывает групповой выбор. 
++Нам нужно принудительно перебрать все элементы, которые попали в область выделения в момент отпускания мыши:
++
++def mouseReleaseEvent(self, event):
++    # Вызываем базовый метод, чтобы Qt завершил RubberBand
++    super().mouseReleaseEvent(event)
++    
++    # Собираем ВСЕ элементы, которые сейчас оказались выделены встроенной рамкой Qt
++    selected_items = self.selectedItems()
++    
++    # Если мы выделили группу, принудительно зажигаем маркеры для каждого ControlItem
++    for item in selected_items:
++        if hasattr(item, 'set_selected'):
++            item.set_selected(True)
++            
++    # Дополнительно вызываем обновление маркеров ресайза на сцене, если такой метод есть
++    if hasattr(self, 'update_resize_handles_position'):
++        self.update_resize_handles_position()
++
+
+# 2026-06-04 22:51:04.281281
++Встроенная логика Qt Graphics View после RubberBand принудительно сбрасывает множественный выбор до одного элемента в самом конце события. Давай заблокируем этот сброс и принудительно зафиксируем выделение пачки элементов в файле widgets/form_designer_old/form_scene.py.
++
++Перепиши метод mouseReleaseEvent следующим образом:
++
++def mouseReleaseEvent(self, event):
++    # 1. ЗАПОМИНАЕМ область выделения RubberBand ДО того, как базовый класс всё сбросит
++    # Считываем прямоугольник, который очертил пользователь на экране
++    rubber_band_rect = self.views()[0].rubberBandRect()
++    
++    if not rubber_band_rect.isEmpty():
++        # Переводим экранные координаты в координаты нашей 2D-сцены
++        scene_rect = self.views()[0].mapToScene(rubber_band_rect).boundingRect()
++        
++        # Находим ВТИХУЮ абсолютно все ControlItem, которые попали внутрь этой рамки
++        items_in_band = [item for item in self.items(scene_rect) if hasattr(item, 'set_selected')]
++        
++        # 2. Вызываем базовый метод, пускай Qt завершает свои внутренние процессы
++        super().mouseReleaseEvent(event)
++        
++        # 3. ЖЕСТКО восстанавливаем групповое выделение поверх базового сброса Qt
++        self.clearSelection() # Сначала чистим мусор
++        for item in items_in_band:
++            item.setSelected(True)      # Включаем стандартный флаг Qt
++            if hasattr(item, 'set_selected'):
++                item.set_selected(True) # Включаем синие маркеры ресайза
++                
++        # Обновляем маркеры ресайза на сцене
++        if hasattr(self, 'update_resize_handles_position'):
++            self.update_resize_handles_position()
++    else:
++        # Если это был обычный одиночный клик, а не рамка — пускай Qt работает штатно
++        super().mouseReleaseEvent(event)
++
+
+# 2026-06-04 22:55:00.646396
++Мой косяк, мы перемудрили с координатами вьювера в сцене. Метод self.views().rubberBandRect() вызвал ошибку, и теперь вообще ни один элемент не выделяется. Давай полностью откатим и перепишем логику выделения на штатный механизм Qt в двух файлах.
++
++1. В файле widgets/form_designer_old/form_scene.py:
++- Полностью верни стандартные методы мыши без кастомных перехватов координат вьювера:
++def mousePressEvent(self, event):
++    super().mousePressEvent(event)
++
++def mouseMoveEvent(self, event):
++    super().mouseMoveEvent(event)
++
++def mouseReleaseEvent(self, event):
++    # Вызываем базовый метод, чтобы Qt штатно завершил RubberBand и сам выделил элементы на сцене
++    super().mouseReleaseEvent(event)
++    
++    # Теперь просто берем элементы, которые Qt УЖЕ успешно добавил в свой стандартный список выделения
++    for item in self.selectedItems():
++        if hasattr(item, 'set_selected'):
++            item.set_selected(True) # Включаем синие маркеры ресайза для каждого ControlItem в группе
++            
++    if hasattr(self, 'update_resize_handles_position'):
++        self.update_resize_handles_position()
++
++2. В файле widgets/form_designer_old/form_view.py:
++- Убедись, что в конструкторе __init__ или методе настройки вьювера жестко прописан правильный режим DragMode, который заставляет Qt удерживать множественный выбор, а не сбрасывать его в одиночный:
++  self.setDragMode(QGraphicsView.RubberBandDrag)
++  self.setRenderHint(QPainter.Antialiasing, True)
++  # Флаг, который заставляет рамку работать в режиме добавления/удержания элементов группы:
++  self.setRubberBandSelectionMode(Qt.ContainsItemShape)
++
+
+# 2026-06-04 22:59:53.203007
++Давай полностью вернемся к базовому стандартному механизму множественного выделения Qt через зажатую клавишу Ctrl. Для этого нам нужно убрать все ночные нагромождения из методов мыши.
++
++1. В файле widgets/form_designer_old/form_scene.py полностью перепиши методы мыши, сделав их чистыми, чтобы они просто пробрасывали события в базовый класс:
++
++def mousePressEvent(self, event):
++    # Разрешаем Qt обрабатывать клики с Ctrl (добавление в группу)
++    super().mousePressEvent(event)
++
++def mouseMoveEvent(self, event):
++    super().mouseMoveEvent(event)
++
++def mouseReleaseEvent(self, event):
++    super().mouseReleaseEvent(event)
++    # После любого клика или релиза просто синхронизируем синие маркеры ресайза
++    # для всех элементов, которые Qt сейчас считает выделенными
++    for item in self.items():
++        if hasattr(item, 'set_selected'):
++            # Если элемент входит в стандартный список выделенных Qt — зажигаем маркеры, иначе тушим
++            item.set_selected(item.isSelected())
++            
++    if hasattr(self, 'update_resize_handles_position'):
++        self.update_resize_handles_position()
++
++2. В файле widgets/form_designer_old/control_item.py проверь, чтобы методы mousePressEvent или mouseReleaseEvent (если они там переопределены) ОБЯЗАТЕЛЬНО в конце вызывали super().mousePressEvent(event) или super().mouseReleaseEvent(event), иначе они глушат событие выбора и не дают Qt обработать зажатый Ctrl.
++
+
+# 2026-06-04 23:05:22.474076
++Мы полностью сломали логику кликов: левая кнопка не выделяет, правая кнопка выделяет и сбрасывает Ctrl. Давай полностью перепишем обработку мыши в control_item.py и form_scene.py на чистый, эталонный стандарт Qt, чтобы вернуть базовое выделение (включая Ctrl) в рабочее состояние.
++
++1. В файле widgets/form_designer_old/control_item.py полностью перепиши методы мыши:
++
++def mousePressEvent(self, event):
++    # Если нажата левая кнопка — отдаем управление базовому классу Qt для стандартного выделения/перемещения
++    if event.button() == Qt.LeftButton:
++        super().mousePressEvent(event)
++    # Если нажата правая кнопка — выделяем этот элемент и НЕ сбрасываем сцену
++    elif event.button() == Qt.RightButton:
++        self.setSelected(True)
++        self.set_selected(True)
++        super().mousePressEvent(event)
++
++def mouseMoveEvent(self, event):
++    super().mouseMoveEvent(event)
++
++def mouseReleaseEvent(self, event):
++    super().mouseReleaseEvent(event)
++    # Синхронизируем синие маркеры ресайза по флагу выделения Qt
++    self.set_selected(self.isSelected())
++
++2. В файле widgets/form_designer_old/form_scene.py полностью очисти методы мыши от кастомных условий, вернув чистый проброс событий:
++
++def mousePressEvent(self, event):
++    super().mousePressEvent(event)
++
++def mouseMoveEvent(self, event):
++    super().mouseMoveEvent(event)
++
++def mouseReleaseEvent(self, event):
++    super().mouseReleaseEvent(event)
++    # После отпускания мыши (клик или RubberBand) просто обновляем маркеры для всех ControlItem на сцене
++    for item in self.items():
++        if hasattr(item, 'set_selected'):
++            item.set_selected(item.isSelected())
++            
++    if hasattr(self, 'update_resize_handles_position'):
++        self.update_resize_handles_position()
++
+
+# 2026-06-04 23:10:17.152415
++Внедренные изменения полностью сломали режим дизайна формы: виджеты стали активными (в них можно вводить текст), а сами графические контейнеры ControlItem перестали выделяться и двигаться по сцене. Давай жестко заблокируем фокус виджетов и вернем управление контейнеру.
++
++Исправь файл widgets/form_designer_old/control_item.py:
++
++1. В конструкторе __init__ после добавления виджета принудительно отключи для него фокус клавиатуры и мыши в режиме дизайна:
++   if self.widget():
++       self.widget().setFocusPolicy(Qt.NoFocus)
++       self.widget().setAttribute(Qt.WA_TransparentForMouseEvents, True)
++
++2. Перепиши метод mousePressEvent так, чтобы он ЖЕСТКО перехватывал управление и не пускал клики мыши внутрь кнопок и текстбоксов:
++def mousePressEvent(self, event):
++    # Принудительно принимаем событие на уровне графического контейнера
++    event.accept()
++    
++    if event.button() == Qt.LeftButton:
++        # Включаем стандартный флаг выделения Qt Graphics Item
++        self.setSelected(True)
++        self.set_selected(True)
++        # Передаем управление базовому классу графического элемента, чтобы работал сдвиг мышью
++        super().mousePressEvent(event)
++    elif event.button() == Qt.RightButton:
++        self.setSelected(True)
++        self.set_selected(True)
++        # Вызываем контекстное меню, если метод определен
++        if hasattr(self, 'show_context_menu'):
++            self.show_context_menu(event.screenPos())
++
++3. Убедись, что метод mouseMoveEvent также передает управление базовому классу для плавной буксировки элемента:
++def mouseMoveEvent(self, event):
++    super().mouseMoveEvent(event)
++
+
+# 2026-06-04 23:12:11.242773
++Внедренные изменения полностью отключили режим дизайна: ВСЕ контролы (кнопки, чекбоксы, текстбоксы) ведут себя как на работающей форме, кликаются и перехватывают фокус. Нам нужно полностью изолировать внутренние виджеты от мыши и вернуть управление графическому контейнеру.
++
++Перепиши файл widgets/form_designer_old/control_item.py, вернув жесткий перехват событий графического элемента:
++
++1. В методе mousePressEvent:
++def mousePressEvent(self, event):
++    # Жестко говорим Qt: клик обработан на уровне контейнера, внутрь кнопок и чекбоксов его не пускать!
++    event.accept()
++    
++    # Стандартная обработка выделения
++    self.setSelected(True)
++    self.set_selected(True)
++    
++    if event.button() == Qt.LeftButton:
++        # Пробрасываем в базовый класс графического элемента, чтобы работало перемещение (drag)
++        super().mousePressEvent(event)
++    elif event.button() == Qt.RightButton:
++        # Вызываем контекстное меню удаления/свойств
++        if hasattr(self, 'show_context_menu'):
++            self.show_context_menu(event.screenPos())
++
++2. Убедись, что метод mouseMoveEvent и mouseReleaseEvent также вызывают базовые методы GraphicsItem:
++def mouseMoveEvent(self, event):
++    super().mouseMoveEvent(event)
++
++def mouseReleaseEvent(self, event):
++    super().mouseReleaseEvent(event)
++
+
+# 2026-06-04 23:29:39.086752
++Запомни архитектурное правило для проекта Mozart:
++1. Контролы на сцене упакованы в QGraphicsProxyWidget (класс ControlItem). Чтобы они не оживали в режиме дизайна (чекбоксы не кликались, текстбоксы не принимали текст), стандартные методы QtWA_TransparentForMouseEvents не работают из-за множественного наследования от BaseControl.
++2. Единственный рабочий способ изолировать виджеты — использовать QObject.installEventFilter() (класс DesignEventFilter), который перехватывает MouseButtonPress, KeyPress и блокирует их прохождение внутрь виджета.
++3. Для группового перемещения нельзя использовать super().mouseMoveEvent(). Нужно вручную фиксировать словарь стартовых позиций выделенных элементов self._group_start_positions при mousePressEvent и синхронно двигать их по дельте смещения мыши в mouseMoveEvent.
++Никогда больше не заменяй эти методы на стандартные вызовы super() в Graphics View!
++
+
+# 2026-06-09 20:45:32.923339
++y
+
+# 2026-06-09 21:01:23.118205
++/add /home/sergey/Documents/автодок20052026/pg_schema_dump_pr.md
+
+# 2026-06-09 21:02:08.857035
++/add pg_schema_dump_pr.md
+
+# 2026-06-09 21:19:52.641463
++/add ./architecture/описаниеАПИ/парадигма гуи.txt
+
+# 2026-06-09 21:20:26.296593
++n
+
+# 2026-06-09 21:20:38.954080
++/add ./architecture/описаниеАПИ/парадигмагуи.txt
+
+# 2026-06-09 21:21:01.288811
++n
+
+# 2026-06-09 21:21:12.481629
++/add ./architecture/описаниеАПИ/парадигмагуи.txt
+
+# 2026-06-09 21:24:46.269836
++/add **/ *.py
+
+# 2026-06-09 21:36:29.035477
++/add ./architecture/техническоеописаниесистемы.txt
+
+# 2026-06-09 21:38:10.733253
++/add pg_schema_dump_pr.md
+
+# 2026-06-09 21:38:38.069183
++напиши как понимаешь структуру данных
+
+# 2026-06-09 21:42:38.985899
++/add pg_schema_dump_pr.md
+
+# 2026-06-09 21:42:59.097248
++/add ./architecture/техническоеописаниесистемы.txt
+
+# 2026-06-09 21:43:29.369525
++напиши как понимаешь структуру системы
+
+# 2026-06-09 21:44:15.874775
++n
+
+# 2026-06-09 21:48:21.421370
++пиши по русски, опиши почему в генераторе форм контрорлы оптионгрупп не редактируются, я не могу задать для них в конструкторе значения стартовы(наприеме муж  /жен) и нет привязки к источнику в таблице. например в таблице жен, значит оптионгрупп должен быть выбран на жен. кроме того, почему контролы активны в режиме генерацйии форм. в режиме генрации не должны выбираться даты, вбиваться в текстбокса значения и тд. это визуальный редактор. а не просмотр данных. опиши все ошибкти
+
+# 2026-06-09 21:49:33.814392
++y
+
+# 2026-06-09 21:49:57.848125
++/add  architecture/анализ_ошибок_форм.txt
+
+# 2026-06-09 21:50:59.320713
++где лежат все контролы? 
+
+# 2026-06-09 21:57:40.328058
++я не про это спрашивал. где в питоновском проект лежат все контролы для формы
+
+# 2026-06-09 22:00:20.124237
++/add **/ *.py
+
+# 2026-06-09 22:03:54.111496
++ y
+
+# 2026-06-09 22:04:08.934504
++Y
+
+# 2026-06-09 22:04:31.640611
++/add pg_schema_dump_pr.md
+
+# 2026-06-09 22:09:25.717101
++/add project_dump.json
+
+# 2026-06-09 22:10:03.366220
++как ты понимаешь структуру таблиц и структуру каталогов с питоновскими файлами?
+
+# 2026-06-09 22:12:03.015578
++пиши по русски, опиши почему в генераторе форм контрорлы оптионгрупп не редактируются, я не могу задать для них в конструкторе значения стартовы(наприеме муж  /жен) и нет привязки к источнику в таблице. например в таблице жен, значит оптионгрупп должен быть выбран на жен. кроме того, почему контролы активны в режиме генерацйии форм. в режиме генрации не должны выбираться даты, вбиваться в текстбокса значения и тд. это визуальный редактор. а не просмотр данных. опиши все ошибкти
+
+# 2026-06-09 22:16:27.055062
++y
+
+# 2026-06-09 22:33:05.703595
++/add ./architecture/описаниеАПИ/*.txt
+
+# 2026-06-09 22:41:20.005674
++пробегись по всем остальным контролам, обеспечь в режиме конструктора форм, чтобы они не давали возможность редактировать данные - датабокс например почемуто дает возможность выбрать дату.потом для формы сделай возможность указать она главная в инетрфейсе(если да ,то укзать интерфейс и прикрепить менюгу интерфейса к этой форме), она гридовая для сущности(тогда указать сущность и обеспечить работу мастера прикрепляющего грид с сущностью в форму, в форму/грид данные попадают порциями по сто строк коллекции из обьекта, рпаботающего со вторым слоем, над гридом должна стать текстбокс с фильтром. данные фильтра передаются в обьект работаюбщий со вторым слоем, чтобы он на второй слой отправил фильтр. второй слой, модуль работающий с третьим слоем перегоняет фильтр в обьект 2 слоя работающий с базой. и ответ идет назад, опрять по 100 записей, на форме должны быть кнопки следующие 100, преджыдущие 100) или форма едитас контролами для полей сущности, или формиа вообще не для сущностей и полностью свой код имеет
+
+# 2026-06-09 22:52:53.854762
++y
+
+# 2026-06-09 22:55:43.727544
++/home/sergey/Documents/configurate/.venv/bin/python /home/sergey/Documents/configurate/ide_main.py 
++Traceback (most recent call last):
++  File "/home/sergey/Documents/configurate/tabs/forms_tab.py", line 152, in edit_form
++    dlg = FormPropertiesDialog(None, data, db=self.db, form_id=form_id)
++          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
++  File "/home/sergey/Documents/configurate/tabs/forms/form_properties_dialog.py", line 32, in __init__
++    self._load_data()
++  File "/home/sergey/Documents/configurate/tabs/forms/form_properties_dialog.py", line 107, in _load_data
++    self._load_controls_to_designer()
++  File "/home/sergey/Documents/configurate/tabs/forms/form_properties_dialog.py", line 140, in _load_controls_to_designer
++    self.designer.scene.add_control(control_widget, str(eid), cclass, x, y)
++  File "/home/sergey/Documents/configurate/widgets/form_designer_old/form_scene.py", line 100, in add_control
++    item = ControlItem(control_widget, control_id, control_type, parent=self.background)
++           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
++  File "/home/sergey/Documents/configurate/widgets/form_designer_old/control_item.py", line 81, in __init__
++    child.setFocusPolicy(Qt.NoFocus)
++    ^^^^^^^^^^^^^^^^^^^^
++AttributeError: 'PySide6.QtWidgets.QHBoxLayout' object has no attribute 'setFocusPolicy'
++
+
+# 2026-06-09 22:56:12.086977
++поступили ошибки /home/sergey/Documents/configurate/.venv/bin/python /home/sergey/Documents/configurate/ide_main.py 
++Traceback (most recent call last):
++  File "/home/sergey/Documents/configurate/tabs/forms_tab.py", line 152, in edit_form
++    dlg = FormPropertiesDialog(None, data, db=self.db, form_id=form_id)
++          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
++  File "/home/sergey/Documents/configurate/tabs/forms/form_properties_dialog.py", line 32, in __init__
++    self._load_data()
++  File "/home/sergey/Documents/configurate/tabs/forms/form_properties_dialog.py", line 107, in _load_data
++    self._load_controls_to_designer()
++  File "/home/sergey/Documents/configurate/tabs/forms/form_properties_dialog.py", line 140, in _load_controls_to_designer
++    self.designer.scene.add_control(control_widget, str(eid), cclass, x, y)
++  File "/home/sergey/Documents/configurate/widgets/form_designer_old/form_scene.py", line 100, in add_control
++    item = ControlItem(control_widget, control_id, control_type, parent=self.background)
++           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
++  File "/home/sergey/Documents/configurate/widgets/form_designer_old/control_item.py", line 81, in __init__
++    child.setFocusPolicy(Qt.NoFocus)
++    ^^^^^^^^^^^^^^^^^^^^
++AttributeError: 'PySide6.QtWidgets.QHBoxLayout' object has no attribute 'setFocusPolicy'
++
+
+# 2026-06-09 23:03:34.138120
++как мне задать пункты списка для оптионгрупп например чтоб было муж и жен??
+
+# 2026-06-09 23:07:44.637334
++я вставил, НО!! сзади осталась еще одна кнопка, новые - да, появились. при етом я нажимаю кнопку сохранить(форму), открываю ее снова - а значением свойства не сохранилось. исправь пжл
+
+# 2026-06-09 23:29:26.362936
++y
+
+# 2026-06-09 23:34:41.296247
++еще раз, под Муж/жен осталась кнопка вариант2. откуда это?сможешь исправить??после того,как я задам значения кнопок никакого прошлого вариант2 не должно же быть. и еще, значения у этого контрола какое?? 1/2??муж/жен??
+
+# 2026-06-09 23:38:25.595937
++и еще, значения у оптион група какое?? 1/2??муж/жен?? 
+
+# 2026-06-09 23:42:13.600980
++QLayout: Attempting to add QLayout "" to MozartOptionGroup "optiongroup_f7c28fdc", which already has a layout
++QLayout: Attempting to add QLayout "" to MozartOptionGroup "optiongroup_33c5d947", which already has a layout
++QLayout: Attempting to add QLayout "" to MozartOptionGroup "optiongroup_f7c28fdc", which already has a layout
++QLayout: Attempting to add QLayout "" to MozartOptionGroup "optiongroup_33c5d947", which already has a layout
++QLayout: Attempting to add QLayout "" to MozartOptionGroup "optiongroup_f7c28fdc", which already has a layout
++QLayout: Attempting to add QLayout "" to MozartOptionGroup "optiongroup_33c5d947", which already has a layout
++ошибка такая вышла
+
+# 2026-06-09 23:49:35.009228
++все равно оатсается вариант1 и вариант2. причем после смены проперти  items_json контрол минимизируется на форме. расстояния между радиокнопками в оптионгрупп какие то колоссальные, сделай промежуток между ними задаваемым. ну и проперти чтоб все таки отображались на форме. я значение изменил а в оптионгрупп ничего не поменялось
+
+# 2026-06-09 23:53:51.085185
++y
+
+# 2026-06-09 23:56:59.811380
++Traceback (most recent call last):
++  File "/home/sergey/Documents/configurate/widgets/form_designer_old/form_scene.py", line 133, in _on_control_selected
++    handle.update_position()
++  File "/home/sergey/Documents/configurate/widgets/form_designer_old/resize_handle.py", line 54, in update_position
++    w = self.target_item.control_widget.width()
++        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
++TypeError: 'int' object is not callable
++Error calling Python override of QGraphicsScene::mouseReleaseEvent(): Traceback (most recent call last):
++  File "/home/sergey/Documents/configurate/widgets/form_designer_old/form_scene.py", line 220, in mouseReleaseEvent
++    super().mouseReleaseEvent(event)
++  File "/home/sergey/Documents/configurate/widgets/form_designer_old/control_item.py", line 161, in mouseReleaseEvent
++    self._emit_geometry()
++  File "/home/sergey/Documents/configurate/widgets/form_designer_old/control_item.py", line 56, in _emit_geometry
++    self.control_widget.width(),
++    ^^^^^^^^^^^^^^^^^^^^^^^^^^^
++TypeError: Error calling Python override of QGraphicsProxyWidget::mouseReleaseEvent(): 'int' object is not callable
++Traceback (most recent call last):
++  File "/home/sergey/Documents/configurate/widgets/form_designer_old/form_scene.py", line 133, in _on_control_selected
++    handle.update_position()
++  File "/home/sergey/Documents/configurate/widgets/form_designer_old/resize_handle.py", line 54, in update_position
++    w = self.target_item.control_widget.width()
++        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
++TypeError: 'int' object is not callable
++Error calling Python override of QGraphicsScene::mouseReleaseEvent(): Traceback (most recent call last):
++  File "/home/sergey/Documents/configurate/widgets/form_designer_old/form_scene.py", line 220, in mouseReleaseEvent
++    super().mouseReleaseEvent(event)
++  File "/home/sergey/Documents/configurate/widgets/form_designer_old/control_item.py", line 161, in mouseReleaseEvent
++    self._emit_geometry()
++  File "/home/sergey/Documents/configurate/widgets/form_designer_old/control_item.py", line 56, in _emit_geometry
++    self.control_widget.width(),
++    ^^^^^^^^^^^^^^^^^^^^^^^^^^^
++TypeError: Error calling Python override of QGraphicsProxyWidget::mouseReleaseEvent(): 'int' object is not call ошибку выдает, исправь пжжл
+
+# 2026-06-09 23:59:05.701050
++y
+
+# 2026-06-10 00:01:10.998459
++опять ошибка /home/sergey/Documents/configurate/.venv/bin/python /home/sergey/Documents/configurate/ide_main.py 
++Traceback (most recent call last):
++  File "/home/sergey/Documents/configurate/widgets/form_designer_old/form_scene.py", line 133, in _on_control_selected
++    handle.update_position()
++  File "/home/sergey/Documents/configurate/widgets/form_designer_old/resize_handle.py", line 60, in update_position
++    w, h = self._get_target_size()
++           ^^^^^^^^^^^^^^^^^^^^^^^
++  File "/home/sergey/Documents/configurate/widgets/form_designer_old/resize_handle.py", line 47, in _get_target_size
++    w = self.target_item.control_widget.width()
++        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
++TypeError: 'int' object is not callable
++Error calling Python override of QGraphicsScene::mouseReleaseEvent(): Traceback (most recent call last):
++  File "/home/sergey/Documents/configurate/widgets/form_designer_old/form_scene.py", line 220, in mouseReleaseEvent
++    super().mouseReleaseEvent(event)
++  File "/home/sergey/Documents/configurate/widgets/form_designer_old/control_item.py", line 146, in mouseReleaseEvent
++    self._emit_geometry()
++  File "/home/sergey/Documents/configurate/widgets/form_designer_old/control_item.py", line 50, in _emit_geometry
++    self.widget().width(),
++    ^^^^^^^^^^^^^^^^^^^^^
++TypeError: Error calling Python override of QGraphicsProxyWidget::mouseReleaseEvent(): 'int' object is not callable
++Исправь критическую ошибку TypeError: 'int' object is not callable. В файлах control_item.py и resize_handle.py ты случайно переопределил стандартные методы Qt `.width()` и `.height()` встроенного виджета, присвоив им целочисленные значения (int). Измени код так, чтобы для хранения размеров использовались внутренние переменные (например, `_width` или `_w`), а методы `.width()` и `.height()` вызывались как функции, без переопределения.
++
+
+# 2026-06-10 00:04:35.626230
++Ошибка не исчезла. Ошибка `TypeError: 'int' object is not callable` происходит при вызове `self.control_widget.width()`. Это означает, что внутри класса виджета (в controls/optiongroup.py или другом файле контрола) свойство `width` или `height` было перезаписано числом (например, `self.width = ...`). 
++
++Найди в коде виджетов строкy, где переменной `self.width` или `self.height` присваивается значение int. Немедленно переименуй эти переменные во внутренние, например `self._widget_width` или `self._current_width`. Никогда не перекрывай стандартные методы Qt `.width()` и `.height()` интами! Исправь это.
++
+
+# 2026-06-10 00:15:18.878992
++Критическая ошибка по-прежнему не исправлена: `TypeError: 'int' object is not callable` при вызове `control_widget.width()`.
++
++Это означает, что внутри класса самого кастомного виджета (например, MozartOptionGroup или другого контрола, который сейчас выбран на сцене) присутствует строка вида `self.width = ...` или в него передается словарь/объект, перезаписывающий стандартный метод Qt `.width()`.
++
++Найди во ВСЕХ добавленных файлах виджетов (внутри их методов `__init__`, `load`, `setup` или при динамической установке свойств) строку, где переменной `width` или `height` присваивается число. Немедленно переименуй эти переменные в `_widget_width` и `_widget_height`. Нам нужно, чтобы метод `.width()` оставался вызываемой функцией Qt! Исправь это прямо сейчас.
++
+
+# 2026-06-10 00:21:29.599949
++/home/sergey/Documents/configurate/.venv/bin/python /home/sergey/Documents/configurate/ide_main.py 
++Traceback (most recent call last):
++  File "/home/sergey/Documents/configurate/widgets/form_designer_old/form_scene.py", line 123, in _on_control_selected
++    handle.update_position()
++  File "/home/sergey/Documents/configurate/widgets/form_designer_old/resize_handle.py", line 60, in update_position
++    w, h = self._get_target_size()
++           ^^^^^^^^^^^^^^^^^^^^^^^
++  File "/home/sergey/Documents/configurate/widgets/form_designer_old/resize_handle.py", line 47, in _get_target_size
++    w = self.target_item.control_widget.width()
++        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
++TypeError: 'int' object is not callable
++Error calling Python override of QGraphicsScene::mouseReleaseEvent(): Traceback (most recent call last):
++  File "/home/sergey/Documents/configurate/widgets/form_designer_old/form_scene.py", line 205, in mouseReleaseEvent
++    super().mouseReleaseEvent(event)
++  File "/home/sergey/Documents/configurate/widgets/form_designer_old/control_item.py", line 151, in mouseReleaseEvent
++    self._emit_geometry()
++  File "/home/sergey/Documents/configurate/widgets/form_designer_old/control_item.py", line 46, in _emit_geometry
++    w = self.control_widget.width() if self.control_widget else 0
++        ^^^^^^^^^^^^^^^^^^^^^^^^^^^
++TypeError: Error calling Python override of QGraphicsProxyWidget::mouseReleaseEvent(): 'int' object is not callable
++исправь в конце концов ошибку
+
+# 2026-06-10 00:21:45.816805
++ошибка надо исправить /home/sergey/Documents/configurate/.venv/bin/python /home/sergey/Documents/configurate/ide_main.py 
++Traceback (most recent call last):
++  File "/home/sergey/Documents/configurate/widgets/form_designer_old/form_scene.py", line 123, in _on_control_selected
++    handle.update_position()
++  File "/home/sergey/Documents/configurate/widgets/form_designer_old/resize_handle.py", line 60, in update_position
++    w, h = self._get_target_size()
++           ^^^^^^^^^^^^^^^^^^^^^^^
++  File "/home/sergey/Documents/configurate/widgets/form_designer_old/resize_handle.py", line 47, in _get_target_size
++    w = self.target_item.control_widget.width()
++        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
++TypeError: 'int' object is not callable
++Error calling Python override of QGraphicsScene::mouseReleaseEvent(): Traceback (most recent call last):
++  File "/home/sergey/Documents/configurate/widgets/form_designer_old/form_scene.py", line 205, in mouseReleaseEvent
++    super().mouseReleaseEvent(event)
++  File "/home/sergey/Documents/configurate/widgets/form_designer_old/control_item.py", line 151, in mouseReleaseEvent
++    self._emit_geometry()
++  File "/home/sergey/Documents/configurate/widgets/form_designer_old/control_item.py", line 46, in _emit_geometry
++    w = self.control_widget.width() if self.control_widget else 0
++        ^^^^^^^^^^^^^^^^^^^^^^^^^^^
++TypeError: Error calling Python override of QGraphicsProxyWidget::mouseReleaseEvent(): 'int' object is not callable
++
+
+# 2026-06-10 00:24:53.444110
++исправь ошибку /home/sergey/Documents/configurate/.venv/bin/python /home/sergey/Documents/configurate/ide_main.py 
++Traceback (most recent call last):
++  File "/home/sergey/Documents/configurate/widgets/form_designer_old/main_widget.py", line 150, in _on_control_selected
++    self.property_panel.set_control(control_item)
++  File "/home/sergey/Documents/configurate/widgets/form_designer_old/property_editor.py", line 50, in set_control
++    self.load_properties()
++  File "/home/sergey/Documents/configurate/widgets/form_designer_old/property_editor.py", line 94, in load_properties
++    self._add_property_row("Ширина элемента", int(target_obj.width()), "int", "width")
++                                                  ^^^^^^^^^^^^^^^^^^
++TypeError: 'int' object is not callable
++
+
+# 2026-06-10 00:28:53.375034
++ошибка осталась, исправь пжл /home/sergey/Documents/configurate/.venv/bin/python /home/sergey/Documents/configurate/ide_main.py 
++Traceback (most recent call last):
++  File "/home/sergey/Documents/configurate/widgets/form_designer_old/main_widget.py", line 151, in _on_control_selected
++    self.property_panel.set_control(control_item)
++  File "/home/sergey/Documents/configurate/widgets/form_designer_old/property_editor.py", line 51, in set_control
++    self.load_properties()
++  File "/home/sergey/Documents/configurate/widgets/form_designer_old/property_editor.py", line 106, in load_properties
++    self._add_property_row("Ширина элемента", int(target_obj.width()), "int", "width")
++                                                  ^^^^^^^^^^^^^^^^^^
++TypeError: 'int' object is not callable
++
+
+# 2026-06-10 00:34:16.154498
++ошибочно высвечивает жен, муж , жен. хотя в свойстве пункты списка задано [{"text": "Муж", "value": 1}, {"text": "Жен", "value": 2}]  откуда третье значение. исправь
+
+# 2026-06-10 00:38:00.116751
++при нажатии на кнопку сохранить ошибка /home/sergey/Documents/configurate/.venv/bin/python /home/sergey/Documents/configurate/ide_main.py 
++Traceback (most recent call last):
++  File "/home/sergey/Documents/configurate/tabs/forms/form_properties_dialog.py", line 216, in accept
++    save_data = self.get_data()
++                ^^^^^^^^^^^^^^^
++  File "/home/sergey/Documents/configurate/tabs/forms/form_properties_dialog.py", line 166, in get_data
++    form_data = self.designer.get_form_data()
++                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
++  File "/home/sergey/Documents/configurate/widgets/form_designer_old/main_widget.py", line 258, in get_form_data
++    controls_list = self.scene.get_controls_data() or []
++                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
++  File "/home/sergey/Documents/configurate/widgets/form_designer_old/form_scene.py", line 234, in get_controls_data
++    props['width'] = control_widget.width() if control_widget else 0
++                     ^^^^^^^^^^^^^^^^^^^^^^
++TypeError: 'int' object is not callable
++Traceback (most recent call last):
++  File "/home/sergey/Documents/configurate/tabs/forms/form_properties_dialog.py", line 216, in accept
++    save_data = self.get_data()
++                ^^^^^^^^^^^^^^^
++  File "/home/sergey/Documents/configurate/tabs/forms/form_properties_dialog.py", line 166, in get_data
++    form_data = self.designer.get_form_data()
++                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
++  File "/home/sergey/Documents/configurate/widgets/form_designer_old/main_widget.py", line 258, in get_form_data
++    controls_list = self.scene.get_controls_data() or []
++                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
++  File "/home/sergey/Documents/configurate/widgets/form_designer_old/form_scene.py", line 234, in get_controls_data
++    props['width'] = control_widget.width() if control_widget else 0
++                     ^^^^^^^^^^^^^^^^^^^^^^
++TypeError: 'int' object is not callable
++Traceback (most recent call last):
++  File "/home/sergey/Documents/configurate/tabs/forms/form_properties_dialog.py", line 216, in accept
++    save_data = self.get_data()
++                ^^^^^^^^^^^^^^^
++  File "/home/sergey/Documents/configurate/tabs/forms/form_properties_dialog.py", line 166, in get_data
++    form_data = self.designer.get_form_data()
++                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
++  File "/home/sergey/Documents/configurate/widgets/form_designer_old/main_widget.py", line 258, in get_form_data
++    controls_list = self.scene.get_controls_data() or []
++                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
++  File "/home/sergey/Documents/configurate/widgets/form_designer_old/form_scene.py", line 234, in get_controls_data
++    props['width'] = control_widget.width() if control_widget else 0
++                     ^^^^^^^^^^^^^^^^^^^^^^
++TypeError: 'int' object is not callable
+
+# 2026-06-10 00:42:28.145071
++ошибка при введеннов в свойстве пункты списка занчении [{"text": "Муж", "value": 1}, {"text": "Жен", "value": 2}]   отображается полько кнопка жен

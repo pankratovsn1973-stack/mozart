@@ -1,0 +1,17 @@
+{
+    "db": {
+        "host": "localhost",
+        "port": "5432",
+        "name": "mozart_erp",
+        "user": "postgres",
+        "pass": "SQLSerIra!"
+    },
+    "l2": {
+        "path": "/home/sergey/Documents/configurate/layer2_server",
+        "port": 8000
+    },
+    "l3": {
+        "path": "/home/sergey/Documents/configurate/layer3_client",
+        "starter": "starter.py"
+    }
+}

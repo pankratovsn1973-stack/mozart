@@ -1,0 +1,63 @@
+MASTER BACKUP: MOZART ERP (FINAL HYBRID RELEASE)
+ID Проекта: SERGEY-ERP-MOZART-210226
+Ключевая фраза: Моцарт, ветер в лесу, Чайковский и Фея Драже. ПАРОЛЬ ПРИНЯТ. Реанимация технического бэкапа ERP.
+РАЗДЕЛ 0: ТРЕХСЛОЙНАЯ АРХИТЕКТУРА И RUNTIME (VFP-STYLE)
+
+    Нижний слой (Runtime): Универсальная оболочка. После Login загружает «пакет выживания» (Классы, Процедуры, Константы) и материализует интерфейс. Гибридная загрузка: Глобальный пакет (сразу) + Локальная специфика (Lazy Load) с кэшированием.
+    Средний слой (App Server / Мозг): Python-логика, трансляция метаданных, управление транзакциями и Cross-Lock. Режим «Read-Execute» для метаданных.
+    Верхний слой (PostgreSQL / Слон): Хранилище. Тотальная индексация IX_ всех FK, DateTime, Name, Alias.
+    Транспортный шлюз (ToFrom2LevelCl): Объект goToFrom2Level. Монополия на сеть. Запрет на NULL/Empty. Ответы: llResult, lnResult, loResult (наборы строк).
+    Конфигуратор (Level 0 / IDE): Стиль VFP9. Визуальный дизайн, Property Sheet, Dev-Server («!»). Эксклюзивное право на DDL (ALTER TABLE).
+
+РАЗДЕЛ 1: МЕТАДАННЫЕ И ГРАММАТИКА БД
+
+    Meta_EntityTypes (Реестр типов): ID, cName, cAlias (UK), cBaseClass, lIsDependent (флаг зависимой сущности), lIsHierarchy, lIsVersioned.
+    Meta_Fields (Конфигуратор полей): ID, EntityTypeID (FK, IX), cFieldName, cAlias (IX), cFieldType.
+    Венгерская нотация БД: c (Text), n (Numeric), i (Integer), d (Date), t (DateTime), l (Logical), m (Memo/Code/JSON).
+    Идентификаторы и Индексы: PK всегда ID (Serial). FK всегда [Alias]ID. Шаблоны: PK_, UK_, IX_.
+
+РАЗДЕЛ 2: СТРУКТУРА ДАННЫХ И "МАТРЁШКА"
+
+    Entity_Instances: Реестр объектов. ID (InstanceID), EntityTypeID (IX), OwnerBU_ID (FK к БЕ, IX).
+    Entity_Versions: История. tDT_Start/End (IX - период жизни), cVersionStatus (Active/Archived/Draft).
+    Зависимые сущности (Composition): Напр. Назначение (EXT_APPOINT). Не имеет прямого меню. Связывается с несколькими Мастер-Владельцами (Персона и Должность).
+
+РАЗДЕЛ 5: ГИБРИДНОЕ ХРАНИЛИЩЕ КОДА (CALCULATIONS)
+
+    FS-Mapping: Python-код процедур p_ и функций f_ хранится в .py файлах на диске Среднего слоя (поддержка Git/IDE).
+    Мета-зеркало: Таблица Meta_Calculations хранит путь к файлу (cFilePath) и SHA-256 Hash.
+    Execution: Средний слой считывает файл, сверяет Хэш и упаковывает текст в JSON для Рантайма.
+    Формализм: p_ (Процедура), f_ (Функция), m. (Переменная памяти).
+
+РАЗДЕЛ 7: БЕЗОПАСНОСТЬ И БЛОКИРОВКИ (CROSS-LOCK)
+
+    БЕ (Balance Unit): Одна БЕ = Одна изолированная сессия. Полный перегруз при смене.
+    Мандат: Auth_User_Role_Context (UserID + RoleID + BalanceUnitID).
+    Матрица прав: 8 флагов (Read...Execute). Приоритет Запрета (False).
+    CROSS-LOCK (Перекрестный захват):
+        Правка зависимой сущности (Назначение) блокирует атомарно всех Мастер-владельцев (Персону и Должность).
+        Shared Read / Exclusive Write: Просмотр открыт всем (f_Get), правка — только одному (p_Save).
+        Мягкий Таймаут: 30 мин неактивности → Expired → право сброса Администратором.
+
+РАЗДЕЛ 8: ИНТЕРФЕЙС И РАНТАЙМ (VFP-STYLE)
+
+    Префиксы объектов: frm, txt, edt, grd, cmd, chk, cbo, cnt, fld, lbl.
+    Иерархия ссылок: Системные ссылки this, parent, thisform и глобальный goApp.Forms (коллекция окон).
+    Ролевое Меню (Meta_Menu): Индивидуальное дерево для каждой Роли-Интерфейса.
+    Управление экземплярами: Уникальный ключ cInstanceKey (Alias_ID). Activate() вместо дубля.
+    Буферизация: lDataChanged (форма), QueryUnload (закрытие), iRowStatus (Grid: 0, 1, 2, -1).
+
+РАЗДЕЛ 10: BACKUP, RECOVERY И ОТЧЕТЫ
+
+    Синхронный Snapshot: Транзакционное обновление метаданных и структуры БД.
+    Логический Бэкап: JSON-выгрузка для самосборки БД Конфигуратором.
+    Тандемная Версионность (Машина времени):
+        Online: WHERE VersionStatus = 'Active'.
+        History: WHERE :gdSystemDate BETWEEN tDT_Start AND tDT_End.
+
+РАЗДЕЛ 11: ЖУРНАЛИРОВАНИЕ (LOGGING)
+
+    Sys_Audit_Log: Сохранение mOldBuffer (образ до изменения) и новых значений полей.
+    Sys_Error_Log: Полный StackTrace Python и слепок переменных g.
+
+
