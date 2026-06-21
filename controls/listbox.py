@@ -2,39 +2,53 @@
 # /home/sergey/Documents/configurate/controls/listbox.py
 
 from PySide6.QtWidgets import QListWidget, QListWidgetItem
-from PySide6.QtCore import Property, Qt
+from PySide6.QtCore import Property, Qt, Signal
 import json
 from .base_control import BaseControl
 from .data_source_mixin import DataSourceMixin
 
-class MozartListBox(QListWidget, BaseControl, DataSourceMixin):
+
+class MozartListBox(QListWidget, DataSourceMixin, BaseControl):
+    value_changed = Signal(object)
+    items_loaded = Signal()
+
     def __init__(self, parent=None):
         QListWidget.__init__(self, parent)
-        BaseControl.__init__(self)
         DataSourceMixin.__init__(self)
+        BaseControl.__init__(self)
+        self._design_mode = False
+        self._original_value = None
+        self._is_dirty = False
         self.currentItemChanged.connect(self._on_item_changed)
 
     def _on_item_changed(self, current, previous):
         if current:
-            self._is_dirty = current.data(Qt.UserRole) != self._original_value
+            val = current.data(Qt.ItemDataRole.UserRole)
+            self._is_dirty = val != self._original_value
+            self.value_changed.emit(val)
         else:
             self._is_dirty = self._original_value is not None
+            self.value_changed.emit(None)
 
     def _apply_readonly(self):
         self.setEnabled(not self._is_readonly)
+
+    def set_design_mode(self, design_mode):
+        self._design_mode = design_mode
+        self.setEnabled(not design_mode)
 
     def _update_control(self):
         self.clear()
         for item in self.get_items():
             list_item = QListWidgetItem(item["text"])
-            list_item.setData(Qt.UserRole, item["value"])
+            list_item.setData(Qt.ItemDataRole.UserRole, item["value"])
             self.addItem(list_item)
 
     @Property(str)
     def binding_field(self):
         return self._binding_field
 
-    @binding_field.setter
+    @Property(str)
     def binding_field(self, value):
         self._binding_field = value
 
@@ -54,9 +68,9 @@ class MozartListBox(QListWidget, BaseControl, DataSourceMixin):
     def is_required(self, value):
         self._is_required = value
         if value:
-            self.setStyleSheet(self.styleSheet() + "border: 1px solid red;")
+            self.setStyleSheet(self.styleSheet() + " border: 1px solid red;")
         else:
-            self.setStyleSheet(self.styleSheet().replace("border: 1px solid red;", ""))
+            self.setStyleSheet(self.styleSheet().replace(" border: 1px solid red;", ""))
 
     @Property(bool)
     def is_readonly(self):
@@ -79,14 +93,14 @@ class MozartListBox(QListWidget, BaseControl, DataSourceMixin):
     def properties(self):
         props = BaseControl.properties.fget(self)
         props.update({
-            'source_type': self._source_type,
+            'source_type': getattr(self, '_source_type', 'static'),
             'entity_alias': self._entity_alias,
-            'display_field': self._display_field,
-            'value_field': self._value_field,
-            'items_json': self._items_json,
-            'filter_expression': self._filter_expression,
-            'order_by': self._order_by,
-            'query': self._query,
+            'display_field': getattr(self, '_display_field', 'cname'),
+            'value_field': getattr(self, '_value_field', 'id'),
+            'items_json': getattr(self, '_items_json', '[]'),
+            'filter_expression': getattr(self, '_filter_expression', ''),
+            'order_by': getattr(self, '_order_by', ''),
+            'query': getattr(self, '_query', ''),
         })
         return props
 
@@ -95,32 +109,26 @@ class MozartListBox(QListWidget, BaseControl, DataSourceMixin):
         if not value:
             return
         BaseControl.properties.fset(self, value)
-        if 'source_type' in value:
-            self._source_type = value['source_type']
-        if 'entity_alias' in value:
-            self._entity_alias = value['entity_alias']
-        if 'display_field' in value:
-            self._display_field = value['display_field']
-        if 'value_field' in value:
-            self._value_field = value['value_field']
-        if 'items_json' in value:
-            self._items_json = value['items_json']
-        if 'filter_expression' in value:
-            self._filter_expression = value['filter_expression']
-        if 'order_by' in value:
-            self._order_by = value['order_by']
-        if 'query' in value:
-            self._query = value['query']
-        if not self._design_mode:
+        if 'source_type' in value: self._source_type = value['source_type']
+        if 'entity_alias' in value: self._entity_alias = value['entity_alias']
+        if 'display_field' in value: self._display_field = value['display_field']
+        if 'value_field' in value: self._value_field = value['value_field']
+        if 'items_json' in value: self._items_json = value['items_json']
+        if 'filter_expression' in value: self._filter_expression = value['filter_expression']
+        if 'order_by' in value: self._order_by = value['order_by']
+        if 'query' in value: self._query = value['query']
+
+        if not getattr(self, '_design_mode', False):
             self.load_items()
 
     def set_value(self, value):
         self.blockSignals(True)
         if isinstance(value, str) and not value.isdigit():
-            value = self.find_value_by_text(value)
+            if hasattr(self, 'find_value_by_text'):
+                value = self.find_value_by_text(value)
         for i in range(self.count()):
             item = self.item(i)
-            if item.data(Qt.UserRole) == value:
+            if item.data(Qt.ItemDataRole.UserRole) == value:
                 self.setCurrentItem(item)
                 break
         else:
@@ -131,7 +139,7 @@ class MozartListBox(QListWidget, BaseControl, DataSourceMixin):
 
     def get_value(self):
         item = self.currentItem()
-        return item.data(Qt.UserRole) if item else None
+        return item.data(Qt.ItemDataRole.UserRole) if item else None
 
     def is_dirty(self):
         return self._is_dirty

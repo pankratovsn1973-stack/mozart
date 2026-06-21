@@ -1,13 +1,12 @@
+# controls/data_source_mixin.py
 # -*- coding: utf-8 -*-
-# /home/sergey/Documents/configurate/controls/data_source_mixin.py
 
 import json
-from PySide6.QtCore import Property, Signal
+from PySide6.QtCore import Property
+
 
 class DataSourceMixin:
     """Миксин для контролов со списками (ComboBox, ListBox, OptionGroup)."""
-
-    items_loaded = Signal()
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -31,7 +30,7 @@ class DataSourceMixin:
     def source_type(self, value):
         if value in ("static", "entity", "query"):
             self._source_type = value
-            if not self._design_mode:
+            if not getattr(self, '_design_mode', False):
                 self.load_items()
 
     @Property(str)
@@ -41,7 +40,7 @@ class DataSourceMixin:
     @entity_alias.setter
     def entity_alias(self, value):
         self._entity_alias = value
-        if self._source_type == "entity" and not self._design_mode:
+        if getattr(self, '_source_type', '') == "entity" and not getattr(self, '_design_mode', False):
             self.load_items()
 
     @Property(str)
@@ -51,7 +50,7 @@ class DataSourceMixin:
     @display_field.setter
     def display_field(self, value):
         self._display_field = value
-        if self._source_type == "entity" and not self._design_mode:
+        if getattr(self, '_source_type', '') == "entity" and not getattr(self, '_design_mode', False):
             self.load_items()
 
     @Property(str)
@@ -61,7 +60,7 @@ class DataSourceMixin:
     @value_field.setter
     def value_field(self, value):
         self._value_field = value
-        if self._source_type == "entity" and not self._design_mode:
+        if getattr(self, '_source_type', '') == "entity" and not getattr(self, '_design_mode', False):
             self.load_items()
 
     @Property(str)
@@ -71,7 +70,7 @@ class DataSourceMixin:
     @items_json.setter
     def items_json(self, value):
         self._items_json = value
-        if self._source_type == "static" and not self._design_mode:
+        if getattr(self, '_source_type', '') == "static" and not getattr(self, '_design_mode', False):
             self.load_items()
 
     @Property(str)
@@ -81,7 +80,7 @@ class DataSourceMixin:
     @filter_expression.setter
     def filter_expression(self, value):
         self._filter_expression = value
-        if self._source_type == "entity" and not self._design_mode:
+        if getattr(self, '_source_type', '') == "entity" and not getattr(self, '_design_mode', False):
             self.load_items()
 
     @Property(str)
@@ -91,7 +90,7 @@ class DataSourceMixin:
     @order_by.setter
     def order_by(self, value):
         self._order_by = value
-        if self._source_type == "entity" and not self._design_mode:
+        if getattr(self, '_source_type', '') == "entity" and not getattr(self, '_design_mode', False):
             self.load_items()
 
     @Property(str)
@@ -101,7 +100,7 @@ class DataSourceMixin:
     @query.setter
     def query(self, value):
         self._query = value
-        if self._source_type == "query" and not self._design_mode:
+        if getattr(self, '_source_type', '') == "query" and not getattr(self, '_design_mode', False):
             self.load_items()
 
     def set_design_mode(self, design_mode):
@@ -113,7 +112,7 @@ class DataSourceMixin:
         self._db = db
 
     def load_items(self):
-        if self._design_mode:
+        if getattr(self, '_design_mode', False):
             return
         if self._source_type == "static":
             self._load_from_static()
@@ -124,7 +123,9 @@ class DataSourceMixin:
         else:
             self._items_cache = []
         self._update_control()
-        self.items_loaded.emit()
+
+        if hasattr(self, 'items_loaded'):
+            self.items_loaded.emit()
 
     def _load_from_static(self):
         try:
@@ -154,7 +155,7 @@ class DataSourceMixin:
         if not res:
             self._items_cache = []
             return
-        cname = res[0][0]
+        cname = res
         ext_table = f"ext.ext_{cname}"
         sql = f"""
             SELECT e.{self._value_field}, e.{self._display_field}
@@ -169,17 +170,20 @@ class DataSourceMixin:
         else:
             sql += f" ORDER BY e.{self._display_field}"
         rows = self._db.execute_query(sql)
-        self._items_cache = [{"text": row[1], "value": row[0]} for row in rows]
+        self._items_cache = [{"text": row, "value": row} for row in rows]
 
     def _load_from_query(self):
         if not self._db or not self._query:
             self._items_cache = []
             return
         rows = self._db.execute_query(self._query)
-        self._items_cache = [{"text": row[1], "value": row[0]} for row in rows]
+        self._items_cache = [{"text": row, "value": row} for row in rows]
 
     def _update_control(self):
-        raise NotImplementedError("Must be implemented in child class")
+        """Безопасная заглушка. Если метод переопределен в дочернем классе - выполнится он."""
+        # КРИТИЧЕСКИЙ ФИКС: Убрано принудительное падение raise NotImplementedError,
+        # так как при инициализации свойств в дизайнере дочерний метод может быть еще не доступен.
+        pass
 
     def get_items(self):
         return self._items_cache

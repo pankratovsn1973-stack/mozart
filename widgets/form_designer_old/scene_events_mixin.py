@@ -1,13 +1,10 @@
 # widgets/form_designer_old/scene_events_mixin.py
 # -*- coding: utf-8 -*-
-"""
-Модуль предоставляет класс-примесь EventsMixin для FormDesignerScene.
-Управляет интерактивными событиями мыши (клики, перемещения, отпускания) на холсте.
-Исправлен критический баг AttributeError при попытке получить transform() из списка views.
-"""
 
 from PySide6.QtCore import Qt, QPointF
 from PySide6.QtWidgets import QGraphicsSceneMouseEvent
+from .control_item import ControlItem
+from .resize_handle import ResizeHandle
 
 
 class EventsMixin:
@@ -19,47 +16,74 @@ class EventsMixin:
     def mousePressEvent(self, event: QGraphicsSceneMouseEvent):
         """
         Обработка нажатия кнопки мыши на холсте дизайнера.
-        Гарантирует, что клик долетит до ControlItem и активирует выделение.
+        Управляет одиночным/множественным выделением контролов и сбросом фокуса на форму.
         """
-        if event.button() == Qt.LeftButton:
-            # ИСПРАВЛЕНО: Безопасно получаем матрицу трансформации из первого элемента списка views()
+        if event.button() == Qt.MouseButton.LeftButton:
             view_list = self.views()
             view_transform = view_list[0].transform() if view_list else None
 
-            # Ищем, есть ли какой-то элемент под курсором в момент клика
+            # Ищем графический элемент под курсором в момент клика
             item = self.itemAt(event.scenePos(), view_transform)
 
-            # Если под мышкой абсолютно пусто — каскадно гасим маркеры выделения контролов
-            if item is None:
-                if hasattr(self, 'clear_selection'):
-                    self.clear_selection()
-                elif hasattr(self, 'select_control'):
+            # Если кликнули на пустое место, на саму форму или её элементы (заголовок/статусбар)
+            if item is None or item == self.background or item == getattr(self.background, 'title_bar',
+                                                                          None) or item == getattr(self.background,
+                                                                                                   'status_bar', None):
+                # Снимаем выделение со всех выбранных контролов холста
+                self.clearSelection()
+                # Переключаем инспектор свойств PropertyEditor обратно на параметры формы
+                if hasattr(self, 'select_control'):
                     self.select_control(None)
 
-        # КРИТИЧЕСКИЙ ФИКС: Пробрасываем клик вглубь Qt Graphics View.
-        # Без этой строки QGraphicsScene никогда не передаст клик в ControlItem!
+                # Пробрасываем клик дальше, чтобы TitleBarStub мог начать drag формы
+                super().mousePressEvent(event)
+                return
+
+            # Клик пришелся по контролу (ControlItem)
+            # Если зажат Ctrl — инвертируем статус выделения этого элемента, не трогая остальные
+            if event.modifiers() & Qt.KeyboardModifier.ControlModifier:
+                if isinstance(item, ControlItem):
+                    item.setSelected(not item.isSelected())
+                elif item.parentItem() and isinstance(item.parentItem(), ControlItem):
+                    item.parentItem().setSelected(not item.parentItem().isSelected())
+            else:
+                # Обычный клик: если элемент еще не выделен, сбрасываем старое выделение и выбираем этот
+                target = item if isinstance(item, ControlItem) else item.parentItem()
+                if isinstance(target, ControlItem) and not target.isSelected():
+                    self.clearSelection()
+                    target.setSelected(True)
+
+        # Пробрасываем клик вглубь фреймворка Qt Graphics View
         super().mousePressEvent(event)
 
-    def mouseMoveEvent(self, event: QGraphicsSceneMouseEvent):
-        """
-        Обработка перемещения мыши по холсту.
-        Обеспечивает плавное таскание элементов и мгновенный пересчет рамок ресайза.
-        """
-        # Твой оригинальный код трекинга координат или создания рамки выделения
-        # ...
+        # Синхронизируем панели свойств под текущую группу выделения
+        selected = self.selectedItems()
+        if hasattr(self, 'select_control'):
+            if len(selected) == 1:
+                self.select_control(selected[0])
+            elif len(selected) > 1:
+                self.select_control(selected)
 
-        # КРИТИЧЕСКИЙ ФИКС: Принудительно передаем событие движения в базовый класс Qt.
-        # Это заставит маркеры формы ожить и следовать за краями подложки при изменении размеров,
-        # а также позволит двигать контролы мышью.
+    def mouseMoveEvent(self, event: QGraphicsSceneMouseEvent):
+        """Обработка перемещения мыши по холсту."""
         super().mouseMoveEvent(event)
 
-    def mouseReleaseEvent(self, event: QGraphicsSceneMouseEvent):
-        """
-        Обработка отпускания кнопки мыши.
-        Завершает циклы перетаскивания и фиксирует новые координаты.
-        """
-        # Твой оригинальный код фиксации Drag-and-Drop
-        # ...
+        # Транслируем координаты мыши относительно бланка формы в статус-бар
+        if hasattr(self, 'background') and self.background:
+            local_form_pos = self.background.mapFromScene(event.scenePos())
+            if hasattr(self.background, 'status_bar') and self.background.status_bar:
+                sb = self.background.status_bar
+                if hasattr(sb, 'set_coordinates'):
+                    sb.set_coordinates(local_form_pos.x(), local_form_pos.y())
 
-        # КРИТИЧЕСКИЙ ФИКС: Пробрасываем событие отпускания кнопки мыши дальше по цепочке фреймворка
+    def mouseReleaseEvent(self, event: QGraphicsSceneMouseEvent):
+        """Обработка отпускания кнопки мыши."""
         super().mouseReleaseEvent(event)
+
+        # Если после резиновой рамки или драга изменился состав выделения
+        selected = self.selectedItems()
+        if hasattr(self, 'select_control'):
+            if len(selected) == 1:
+                self.select_control(selected[0])
+            elif len(selected) > 1:
+                self.select_control(selected)

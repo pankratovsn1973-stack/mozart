@@ -2,7 +2,7 @@
 # /home/sergey/Documents/configurate/controls/textbox.py
 
 from PySide6.QtWidgets import QLineEdit
-from PySide6.QtCore import Property, Signal
+from PySide6.QtCore import Property, Signal, Qt
 
 from .base_control import BaseControl
 
@@ -14,6 +14,8 @@ class MozartTextBox(QLineEdit, BaseControl):
         QLineEdit.__init__(self, parent)
         BaseControl.__init__(self)
         self._label = ""
+        self._original_value = ""
+        self._design_mode = False
         self.textChanged.connect(self._on_text_changed)
 
     def _on_text_changed(self):
@@ -24,8 +26,13 @@ class MozartTextBox(QLineEdit, BaseControl):
         self.setReadOnly(self._is_readonly)
 
     def set_design_mode(self, design_mode):
+        self._design_mode = design_mode
         self.setReadOnly(design_mode)
-        self.setEnabled(not design_mode)
+
+        if design_mode:
+            self.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        else:
+            self.setFocusPolicy(Qt.FocusPolicy.ClickFocus)
 
     @Property(str)
     def binding_field(self):
@@ -53,7 +60,8 @@ class MozartTextBox(QLineEdit, BaseControl):
         if value:
             self.setStyleSheet(self.styleSheet() + "border: 1px solid red;")
         else:
-            self.setStyleSheet(self.styleSheet().replace("border: 1px solid red;", ""))
+            self.setStyleSheet(self.styleSheet().replace(
+                "border: 1px solid red;") if "border: 1px solid red;" in self.styleSheet() else self.styleSheet())
 
     @Property(bool)
     def is_readonly(self):

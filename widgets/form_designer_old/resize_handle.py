@@ -1,146 +1,152 @@
 # widgets/form_designer_old/resize_handle.py
 # -*- coding: utf-8 -*-
-"""
-Модуль предоставляет класс ResizeHandle (наследник QGraphicsRectItem).
-Описывает поведение отдельных "волшебных точек" изменения размера объектов на холсте.
-Исправлен порядок аргументов в __init__ для полного соответствия вызову в form_scene.py.
-"""
 
 from PySide6.QtWidgets import QGraphicsRectItem, QGraphicsItem
-from PySide6.QtCore import Qt, QRectF, QPointF
+from PySide6.QtCore import Qt, QPointF
 from PySide6.QtGui import QPen, QColor, QPainter
 
 
 class ResizeHandle(QGraphicsRectItem):
-    """
-    Класс отдельного управляющего маркера (волшебной точки).
-    Отвечает за физическое изменение размеров родительского объекта мышью.
-    """
+    """Правый нижний маркер изменения размеров для формы бланка и контролов."""
 
-    # Статический словарь позиций для совместимости с циклом инициализации в form_scene.py
-    POSITIONS = {
-        0: "TopLeft",
-        1: "TopMid",
-        2: "TopRight",
-        3: "RightMid",
-        4: "BottomRight",
-        5: "BottomMid",
-        6: "BottomLeft",
-        7: "LeftMid"
-    }
+    POSITIONS = {4: "BottomRight"}
 
     def __init__(self, position_index, target_item, parent=None):
-        # ИСПРАВЛЕНО: Порядок аргументов изменен на (position_index, target_item) под строку 47 в form_scene.py
         super().__init__(parent)
         self.target_item = target_item
         self.position_index = int(position_index)
 
-        self.handle_size = 7.0
-        self.setRect(-self.handle_size / 2, -self.handle_size / 2, self.handle_size, self.handle_size)
+        self.handle_size = 16.0
+        self.setRect(-self.handle_size / 2, -self.handle_size / 2,
+                     self.handle_size, self.handle_size)
 
-        self.setFlag(QGraphicsItem.ItemIsMovable, True)
-        self.setFlag(QGraphicsItem.ItemIsSelectable, False)
+        # Отключаем автоматическое перемещение Qt.
+        # Маркер жестко привязан к форме/контролу и не накапливает ошибки двойного смещения.
+        self.setFlag(QGraphicsItem.GraphicsItemFlag.ItemIsMovable, False)
+        self.setFlag(QGraphicsItem.GraphicsItemFlag.ItemIsSelectable, False)
+        self.setAcceptHoverEvents(True)
 
-        self.setPen(QPen(QColor('#0055ff'), 1, Qt.SolidLine))
+        self.setZValue(100)
+
+        self.setPen(QPen(QColor('#0066ff'), 2.0, Qt.PenStyle.SolidLine))
         self.setBrush(QColor('#ffffff'))
 
+        self._hovered = False
+        self._normal_color = QColor('#0066ff')
+        self._hover_color = QColor('#ff5500')
+
         self._is_resizing = False
-        self._drag_start_pos = QPointF()
-        self._start_target_rect = QRectF()
+        self.start_x = 0.0
+        self.start_y = 0.0
+        self.start_w = 0.0
+        self.start_h = 0.0
+        self.start_mouse_scene = QPointF()
 
         self.update_position()
 
     def update_position(self):
-        """Раскладывает квадратики строго по углам и сторонам прямоугольника формы/контрола."""
         if not self.target_item:
             return
 
-        t_rect = self.target_item.rect()
-        t_pos = self.target_item.pos()
+        form_rect = self.target_item.rect()
+        w = form_rect.width()
+        h = form_rect.height()
 
-        w, h = t_rect.width(), t_rect.height()
-        mid_x, mid_y = w / 2.0, h / 2.0
+        offset = 2.0
+        x = w - offset
+        y = h - offset
 
-        # Массив точек привязки маркеров к геометрии объекта
-        points = [
-            QPointF(0.0, 0.0),  # 0: TopLeft
-            QPointF(mid_x, 0.0),  # 1: TopMid
-            QPointF(w, 0.0),  # 2: TopRight
-            QPointF(w, mid_y),  # 3: RightMid
-            QPointF(w, h),  # 4: BottomRight
-            QPointF(mid_x, h),  # 5: BottomMid
-            QPointF(0.0, h),  # 6: BottomLeft
-            QPointF(0.0, mid_y)  # 7: LeftMid
-        ]
+        self.setPos(QPointF(x, y))
 
-        if 0 <= self.position_index < len(points):
-            # Сдвигаем маркер в координаты сцены относительно текущего положения объекта
-            self.setPos(t_pos + points[self.position_index])
+    def hoverEnterEvent(self, event):
+        self._hovered = True
+        self.setPen(QPen(self._hover_color, 2.5, Qt.PenStyle.SolidLine))
+        self.update()
+        event.accept()
+
+    def hoverLeaveEvent(self, event):
+        self._hovered = False
+        self.setPen(QPen(self._normal_color, 2.0, Qt.PenStyle.SolidLine))
+        self.update()
+        event.accept()
 
     def mousePressEvent(self, event):
-        """Фиксация стартовых параметров перед началом изменения размеров."""
-        if event.button() == Qt.LeftButton:
+        if event.button() == Qt.MouseButton.LeftButton:
             self._is_resizing = True
-            self._drag_start_pos = event.scenePos()
-            self._start_target_rect = self.target_item.rect()
+
+            # Запоминаем исходные координаты объекта
+            form_pos = self.target_item.pos()
+            self.start_x = form_pos.x()
+            self.start_y = form_pos.y()
+
+            # Читаем ширину/высоту из свойств формы или из rect() контрола-прокси
+            self.start_w = getattr(self.target_item, '_width', self.target_item.rect().width())
+            self.start_h = getattr(self.target_item, '_height', self.target_item.rect().height())
+
+            # Фиксируем клик в абсолютных координатах сцены один раз (ультрабыстро)
+            self.start_mouse_scene = event.scenePos()
+
             event.accept()
             return
         super().mousePressEvent(event)
 
     def mouseMoveEvent(self, event):
-        """Математический алгоритм изменения размеров формы/контрола по осям."""
         if not self._is_resizing or not self.target_item:
             super().mouseMoveEvent(event)
             return
 
-        delta = event.scenePos() - self._drag_start_pos
+        # Считываем позицию мыши напрямую из сцены БЕЗ тяжелых вызовов mapToParent
+        current_mouse_scene = event.scenePos()
 
-        # Если у сцены включен Snap, округляем дельту сдвига до шага сетки
-        if self.scene() and hasattr(self.scene(), 'snap_to_grid'):
-            snapped_pos = self.scene().snap_to_grid(self.pos() + delta)
-            delta = snapped_pos - self.pos()
+        # Чистая математика вычитания двух векторов на сцене
+        dx = current_mouse_scene.x() - self.start_mouse_scene.x()
+        dy = current_mouse_scene.y() - self.start_mouse_scene.y()
 
-        w = self._start_target_rect.width()
-        h = self._start_target_rect.height()
+        # Настраиваем минимальные пороги: для контролов лимиты компактнее (20x20)
+        is_form = hasattr(self.target_item, 'update_geometry')
+        min_w = 50.0 if is_form else 20.0
+        min_h = 50.0 if is_form else 20.0
 
-        new_w, new_h = w, h
+        new_w = max(min_w, self.start_w + dx)
+        new_h = max(min_h, self.start_h + dy)
 
-        # Алгоритм FoxPro: Вычисляем новые размеры в зависимости от индекса потянутой точки
-        if self.position_index == 2:  # TopRight
-            new_w = w + delta.x()
-        elif self.position_index == 3:  # RightMid
-            new_w = w + delta.x()
-        elif self.position_index == 4:  # BottomRight
-            new_w = w + delta.x()
-            new_h = h + delta.y()
-        elif self.position_index == 5:  # BottomMid
-            new_h = h + delta.y()
-        elif self.position_index == 6:  # BottomLeft
-            new_h = h + delta.y()
+        if is_form:
+            # ВЕТКА ФОРМЫ (FormBackground)
+            self.target_item.update_geometry(
+                self.start_x,
+                self.start_y,
+                new_w,
+                new_h
+            )
+        else:
+            # ВЕТКА КОНТРОЛА (ControlItem)
+            if hasattr(self.target_item, 'setWidgetSize'):
+                self.target_item.setWidgetSize(new_w, new_h)
 
-        # Защита от схлопывания в отрицательный размер
-        new_w = max(50.0, new_w)
-        new_h = max(50.0, new_h)
-
-        # Дёргаем метод ресайза у подложки формы или контрола
-        if hasattr(self.target_item, 'resize_form'):
-            self.target_item.resize_form(new_w, new_h)
-
+        self.update_position()
         event.accept()
 
     def mouseReleaseEvent(self, event):
-        """Завершение цикла изменения размеров."""
-        if event.button() == Qt.LeftButton:
+        if event.button() == Qt.MouseButton.LeftButton:
             self._is_resizing = False
             event.accept()
             return
         super().mouseReleaseEvent(event)
 
     def paint(self, painter: QPainter, option, widget=None):
-        """Отрисовка синих квадратиков-маркеров."""
         painter.save()
-        painter.setRenderHint(QPainter.Antialiasing, False)
+        painter.setRenderHint(QPainter.RenderHint.Antialiasing, True)
+
+        rect = self.rect()
         painter.setPen(self.pen())
         painter.setBrush(self.brush())
-        painter.drawRect(self.rect())
+        painter.drawRoundedRect(rect, 3, 3)
+
+        # Рисуем декоративные насечки в углу маркера
+        painter.setPen(QPen(QColor('#888888'), 1.0, Qt.PenStyle.SolidLine))
+        painter.drawLine(rect.left() + 3, rect.bottom() - 3,
+                         rect.right() - 3, rect.top() + 3)
+        painter.drawLine(rect.left() + 6, rect.bottom() - 3,
+                         rect.right() - 3, rect.top() + 6)
+
         painter.restore()

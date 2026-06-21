@@ -265,7 +265,7 @@ def main():
         'logs', 'backup', 'old'
     }
 
-    target_dir = "/home/sergey/Documents/configurate"
+    target_dir = "/"
     output_pdf = "/home/sergey/Documents/configurate_archive.pdf"
     output_json = "/home/sergey/Documents/project_dump.json"
 

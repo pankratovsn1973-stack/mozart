@@ -1,20 +1,15 @@
 # widgets/form_designer_old/control_item.py
 # -*- coding: utf-8 -*-
-"""
-Модуль предоставляет класс ControlItem (наследник QGraphicsProxyWidget).
-Является визуальным контейнером-оберткой для элементов управления в дизайнере.
-Исправлен баг блокировки простых контролов (TextBox, ComboBox) через прозрачный Event Filter.
-"""
 
-from PySide6.QtWidgets import QGraphicsProxyWidget, QGraphicsSceneMouseEvent, QWidget, QApplication
+from PySide6.QtWidgets import QGraphicsProxyWidget, QGraphicsItem, QWidget, QApplication
 from PySide6.QtCore import Qt, QPointF, QRectF, Signal, QEvent
+from PySide6.QtWidgets import QGraphicsSceneMouseEvent
+from .resize_handle import ResizeHandle
 
 
 class ControlItem(QGraphicsProxyWidget):
-    """
-    Прокси-виджет для управления контролами на холсте дизайнере.
-    Обеспечивает плавное перемещение любых типов полей без блокировки выделения в Qt.
-    """
+    """Прокси-виджет для управления контролами на холсте визуального дизайнера."""
+
     selected_changed = Signal(bool)
     geometry_changed = Signal(str, int, int, int, int)
 
@@ -25,123 +20,160 @@ class ControlItem(QGraphicsProxyWidget):
         self.control_id = str(control_id)
         self.control_type = control_type
 
-        # Настраиваем нативные флаги интерактивности графического движка Qt
-        self.setFlag(QGraphicsProxyWidget.ItemIsMovable, True)
-        self.setFlag(QGraphicsProxyWidget.ItemIsSelectable, True)
+        # Включаем стандартные флаги выделения и трекинга геометрии
+        self.setFlag(QGraphicsItem.GraphicsItemFlag.ItemIsSelectable, True)
+        self.setFlag(QGraphicsItem.GraphicsItemFlag.ItemSendsGeometryChanges, True)
         self.setAcceptHoverEvents(True)
 
-        self.geometryChanged.connect(self._forward_geometry_signal)
+        # Полностью блокируем проваливание событий мыши во внутренние виджеты в режиме дизайна
+        self.setFiltersChildEvents(True)
 
+        # Переменные для ручного расчета перемещения
         self._is_dragging = False
         self._drag_start_pos = QPointF()
 
-        # Накатываем фильтр событий на внутренний виджет и всех его детей каскадно
+        # Автоматически инициализируем маркер ресайза, дочерний для этого контрола
+        self.resize_handle = ResizeHandle(4, self, parent=self)
+        self._handles = [self.resize_handle]
+        self.resize_handle.setVisible(False)
+        self.update_handles_position()
+
+    def setWidgetSize(self, width, height):
+        widget = self.widget()
         if widget:
-            widget.installEventFilter(self)
-            for child in widget.findChildren(QWidget):
-                child.installEventFilter(self)
+            try:
+                widget.setFixedSize(int(width), int(height))
+                self.updateGeometry()
+                self.update_handles_position()
+                self._forward_geometry_signal()
+            except Exception as e:
+                print(f"[ControlItem] Ошибка ресайза виджета: {e}")
 
-    def eventFilter(self, obj, event) -> bool:
-        """
-        Перехватчик низкоуровневых событий рантайм-виджетов.
-        ИСПРАВЛЕНО: Фильтр больше НИКОГДА не возвращает True для кликов,
-        полностью исключая мёртвое залипание текстбоксов.
-        """
-        if QApplication.activeModalWidget() is not None:
-            return False
-
-        if event.type() == QEvent.MouseButtonPress and event.button() == Qt.LeftButton:
-            # Оповещаем сцену о том, какой внутренний виджет кликнули
-            if self.scene() and hasattr(self.scene(), 'select_control'):
-                self.scene().select_control(self.widget())
-
-            # Инициируем параметры для плавного нативного таскания мышью
-            self._is_dragging = True
-
-            # Рассчитываем стартовую позицию захвата в координатах сцены
-            scene_pos = self.mapToScene(QPointF(event.position().x(), event.position().y()))
-            self._drag_start_pos = scene_pos - self.pos()
-
-            # Принудительно выделяем прокси на сцене
-            self.setSelected(True)
-
-            # КРИТИЧЕСКИЙ ФИКС: Возвращаем False! Позволяем Qt обработать клик штатно,
-            # благодаря чему TextBox и ComboBox начнут легально выделяться и двигаться.
-            return False
-
-        elif event.type() == QEvent.MouseButtonRelease and event.button() == Qt.LeftButton:
-            self._is_dragging = False
-
-            # Примагничиваем к сетке при отпускании
-            if self.scene() and hasattr(self.scene(), 'snap_to_grid'):
-                snapped_pos = self.scene().snap_to_grid(self.pos())
-                self.setPos(snapped_pos)
-            return False
-
-        return super().eventFilter(obj, event)
+    def update_handles_position(self):
+        if hasattr(self, '_handles'):
+            for handle in self._handles:
+                if handle and hasattr(handle, 'update_position'):
+                    handle.update_position()
 
     def mousePressEvent(self, event: QGraphicsSceneMouseEvent):
-        """Нативная обработка нажатия мыши на холсте сцены."""
-        if event.button() == Qt.LeftButton:
+        """Обработка захвата контрола мышью."""
+        if event.button() == Qt.MouseButton.LeftButton:
             self._is_dragging = True
-            self._drag_start_pos = event.scenePos() - self.pos()
+
+            # Запоминаем стартовую позицию клика относительно левого верхнего угла самого контрола
+            self._drag_start_pos = event.pos()
+
+            # Управляем групповым или одиночным выделением
+            if event.modifiers() & Qt.KeyboardModifier.ControlModifier:
+                self.setSelected(not self.isSelected())
+            else:
+                if not self.isSelected():
+                    if self.scene():
+                        self.scene().clearSelection()
+                    self.setSelected(True)
+
+            # Фокусируем инспектор свойств
             if self.scene() and hasattr(self.scene(), 'select_control'):
-                self.scene().select_control(self.widget())
+                self.scene().select_control(self)
+
+            event.accept()
+            return
+
         super().mousePressEvent(event)
 
     def mouseMoveEvent(self, event: QGraphicsSceneMouseEvent):
-        """Нативное плавное перемещение элементов по осям X и Y."""
-        if not self._is_dragging:
-            super().mouseMoveEvent(event)
+        """Плавное перемещение текущего контрола (или всей группы выделенных элементов) мышью."""
+        if self._is_dragging and event.buttons() & Qt.MouseButton.LeftButton:
+
+            # Если выделено несколько элементов, перемещаем их синхронно через сцену
+            if self.scene():
+                selected_items = [item for item in self.scene().selectedItems() if isinstance(item, ControlItem)]
+
+                # Если выделена группа, рассчитываем общую дельту смещения по первому элементу
+                if len(selected_items) > 1:
+                    new_pos_scene = event.scenePos() - self._drag_start_pos
+                    delta = new_pos_scene - self.pos()
+
+                    for item in selected_items:
+                        item._move_with_constraints(item.pos() + delta)
+                    event.accept()
+                    return
+
+            # Одиночное перемещение
+            new_pos = event.scenePos() - self._drag_start_pos
+            self._move_with_constraints(new_pos)
+            event.accept()
             return
 
-        # Рассчитываем чистую позицию без рывков и округлений
-        new_pos = event.scenePos() - self._drag_start_pos
+        super().mouseMoveEvent(event)
 
-        # Удерживаем контрол строго в рамках границ подложки формы
-        if self.parentItem():
+    def mouseReleaseEvent(self, event: QGraphicsSceneMouseEvent):
+        """Отпускание мыши и привязка к сетке."""
+        if event.button() == Qt.MouseButton.LeftButton:
+            self._is_dragging = False
+
+            # Применяем привязку к сетке по окончании движения
+            if self.scene() and hasattr(self.scene(), 'snap_to_grid'):
+                snapped_pos = self.scene().snap_to_grid(self.pos())
+                self._move_with_constraints(snapped_pos)
+
+            event.accept()
+            return
+
+        super().mouseReleaseEvent(event)
+
+    def _move_with_constraints(self, target_pos: QPointF):
+        """Вспомогательный метод перемещения с жестким удержанием внутри границ бланка."""
+        if self.parentItem() and hasattr(self.parentItem(), 'rect'):
             p_rect = self.parentItem().rect()
             my_rect = self.rect()
 
-            min_y = 32.0  # Защита шапки TitleBar
-            max_y = max(min_y, p_rect.height() - my_rect.height() - 24.0)  # Защита StatusBar
+            min_y = 32.0  # Высота заголовка формы бланка
+            max_y = max(min_y, p_rect.height() - my_rect.height() - 24.0)
             max_x = max(0.0, p_rect.width() - my_rect.width())
 
-            x = max(0.0, min(new_pos.x(), max_x))
-            y = max(min_y, min(new_pos.y(), max_y))
-            new_pos = QPointF(x, y)
+            x = max(0.0, min(target_pos.x(), max_x))
+            y = max(min_y, min(target_pos.y(), max_y))
+            target_pos = QPointF(x, y)
 
-        self.setPos(new_pos)
-        event.accept()
-
-    def mouseReleaseEvent(self, event: QGraphicsSceneMouseEvent):
-        """Мягкий магнить к сетке при отпускании мыши на сцене."""
-        if event.button() == Qt.LeftButton:
-            self._is_dragging = False
-            if self.scene() and hasattr(self.scene(), 'snap_to_grid'):
-                snapped_pos = self.scene().snap_to_grid(self.pos())
-                self.setPos(snapped_pos)
-        super().mouseReleaseEvent(event)
+        self.setPos(target_pos)
+        self.update_handles_position()
+        self._forward_geometry_signal()
 
     def _forward_geometry_signal(self):
-        """Отправка координат в инспектор свойств."""
         rect = self.rect()
         pos = self.pos()
-        self.geometry_changed.emit(self.control_id, int(pos.x()), int(pos.y()), int(rect.width()), int(rect.height()))
+        self.geometry_changed.emit(
+            self.control_id, int(pos.x()), int(pos.y()), int(rect.width()), int(rect.height())
+        )
+        if self.scene() and hasattr(self.scene(), 'geometry_changed'):
+            self.scene().geometry_changed.emit(
+                self.control_id, int(pos.x()), int(pos.y()), int(rect.width()), int(rect.height())
+            )
+
+        # МОНОЛИТНАЯ ПРОШИВКА СИНХРОНИЗАЦИИ: Напрямую находим панель свойств через иерархию окон приложения
+        for widget in QApplication.allWidgets():
+            if widget.__class__.__name__ == "FormDesigner":
+                if hasattr(widget, 'property_panel') and hasattr(widget.property_panel, 'update_geometry_values'):
+                    widget.property_panel.update_geometry_values(pos.x(), pos.y(), rect.width(), rect.height())
+                    break
 
     def set_selected(self, selected: bool):
         self.setSelected(selected)
-        inner_widget = self.widget()
-        if inner_widget and hasattr(inner_widget, 'set_selected'):
-            inner_widget.set_selected(selected)
-        if not selected and self.scene():
-            self.clearFocus()
 
     def itemChange(self, change, value):
-        if change == QGraphicsProxyWidget.ItemSelectedChange and self.scene():
+        if change == QGraphicsItem.GraphicsItemChange.ItemSelectedChange:
             is_selected = bool(value)
             self.selected_changed.emit(is_selected)
-            inner_widget = self.widget()
-            if inner_widget and hasattr(inner_widget, 'set_selected'):
-                inner_widget.set_selected(is_selected)
+
+            if hasattr(self, '_handles'):
+                for handle in self._handles:
+                    handle.setVisible(is_selected)
+                    if is_selected:
+                        handle.update_position()
+
+        elif change == QGraphicsItem.GraphicsItemChange.ItemPositionHasChanged:
+            self.update_handles_position()
+            self._forward_geometry_signal()
+
         return super().itemChange(change, value)

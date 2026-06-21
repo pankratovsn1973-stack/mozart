@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 # /home/sergey/Documents/configurate/controls/container.py
 
-from PySide6.QtWidgets import QGroupBox, QVBoxLayout
+from PySide6.QtWidgets import QGroupBox, QVBoxLayout, QWidget
 from PySide6.QtCore import Property
 
 from .base_control import BaseControl
@@ -17,6 +17,7 @@ class MozartContainer(QGroupBox, BaseControl):
         self.setLayout(self._layout)
 
     def set_design_mode(self, design_mode):
+        # КРИТИЧЕСКИЙ ФИКС: QWidget теперь импортирован корректно
         for child in self.findChildren(QWidget):
             if hasattr(child, 'set_design_mode'):
                 child.set_design_mode(design_mode)

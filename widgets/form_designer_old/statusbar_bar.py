@@ -1,22 +1,22 @@
 # widgets/form_designer_old/statusbar_bar.py
 # -*- coding: utf-8 -*-
 
-from PySide6.QtWidgets import QGraphicsWidget
+from PySide6.QtWidgets import QGraphicsWidget, QGraphicsLinearLayout, QGraphicsProxyWidget, QComboBox
 from PySide6.QtCore import Qt, Signal, QPointF
 from PySide6.QtGui import QBrush, QColor, QPen, QPainter, QFont
+from .toolbar_bar import ToolBarButton
 
 
 class StatusBarBar(QGraphicsWidget):
     """
     Статусная строка (подвал) проектируемой формы.
-    Отображает:
-    - координаты мыши относительно формы
-    - текущий масштаб
-    - режим (проектирование/выполнение)
-    - информационные сообщения
+    Отображает координаты мыши, масштаб, режим и содержит кнопки управления сеткой/привязкой.
     """
 
     status_message_changed = Signal(str)
+    snap_toggled = Signal(bool)
+    grid_toggled = Signal(bool)
+    grid_size_changed = Signal(int)
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -30,17 +30,68 @@ class StatusBarBar(QGraphicsWidget):
         self._design_mode = True
         self._status_text = "Готово"
 
-        # Задаем жесткие ограничения размеров без использования сложного Layout
+        self._setup_ui()
+
+    def _setup_ui(self):
+        # Строим горизонтальный макет подвала формы
+        layout = QGraphicsLinearLayout(Qt.Orientation.Horizontal)
+        layout.setContentsMargins(8, 2, 8, 2)
+        layout.setSpacing(8)
+
+        # 1. ТЕКСТОВЫЕ КНОПКИ-ФИКСАТОРЫ С АВТО-ИНДИКАЦИЕЙ ДЛЯ ПОДВАЛА
+        self.btn_grid = ToolBarButton("Сетка", "Показать/скрыть сетку", self)
+        self.btn_grid.setCheckable(True)
+        self.btn_grid.setChecked(True)  # По умолчанию сетка горит синим (ВКЛ)
+        self.btn_grid.setPreferredSize(85, 20)
+        self.btn_grid.toggled.connect(lambda checked: self.grid_toggled.emit(checked))
+        layout.addItem(self.btn_grid)
+
+        self.btn_bind = ToolBarButton("Отвязано", "Включить/выключить привязку к сетке", self)
+        self.btn_bind.setCheckable(True)
+        self.btn_bind.setChecked(False)  # По умолчанию отвязано (красный)
+        self.btn_bind.setPreferredSize(85, 20)
+        self.btn_bind.toggled.connect(lambda checked: self.snap_toggled.emit(checked))
+        layout.addItem(self.btn_bind)
+
+        # 2. ПРОКСИ-ВИДЖЕТ ДЛЯ КОМБОБОКСА ВЫБОРА ШАГА СЕТКИ
+        self.combo_proxy = QGraphicsProxyWidget(self)
+        self.grid_combo = QComboBox()
+        self.grid_combo.addItems(["2", "5", "10", "15", "20", "25", "30"])
+        self.grid_combo.setCurrentText("10")
+        self.grid_combo.setFixedWidth(55)
+        self.grid_combo.setStyleSheet("""
+            QComboBox { 
+                font-size: 10px; 
+                padding: 1px; 
+                border: 1px solid #b0b0b0; 
+                background-color: white; 
+            }
+        """)
+        self.grid_combo.currentTextChanged.connect(self._on_grid_size_changed)
+        self.combo_proxy.setWidget(self.grid_combo)
+        layout.addItem(self.combo_proxy)
+
+        layout.addStretch()
+        self.setLayout(layout)
+
+        # Задаем жесткие ограничения размеров подвала
         self.setMinimumHeight(self.bar_height)
         self.setMaximumHeight(self.bar_height)
-        self.setMinimumWidth(400)
+        self.setMinimumWidth(500)
 
+    def _on_grid_size_changed(self, text):
+        """Транслирует выбранный размер сетки в ядро сцены дизайнера."""
+        try:
+            size = int(text)
+            self.grid_size_changed.emit(size)
+        except ValueError:
+            pass
     def set_coordinates(self, x, y):
         """Устанавливает координаты мыши относительно формы"""
         if self._current_x != int(x) or self._current_y != int(y):
             self._current_x = int(x)
             self._current_y = int(y)
-            self.update()  # Вызываем перерисовку текста
+            self.update()
 
     def set_zoom(self, zoom_percent):
         """Устанавливает масштаб в процентах"""
@@ -52,6 +103,9 @@ class StatusBarBar(QGraphicsWidget):
         """Устанавливает режим: True - проектирование, False - просмотр"""
         if self._design_mode != design_mode:
             self._design_mode = design_mode
+            self.grid_combo.setEnabled(design_mode)
+            self.btn_grid.setEnabled(design_mode)
+            self.btn_bind.setEnabled(design_mode)
             self.update()
 
     def set_status(self, text):
@@ -66,7 +120,7 @@ class StatusBarBar(QGraphicsWidget):
 
     def paint(self, painter: QPainter, option, widget=None):
         """Отрисовка фона и текстовых блоков статусной строки"""
-        painter.setRenderHint(QPainter.Antialiasing)
+        painter.setRenderHint(QPainter.RenderHint.Antialiasing)
         rect = self.rect()
 
         # 1. Отрисовка базового фона панели подвала
@@ -74,48 +128,26 @@ class StatusBarBar(QGraphicsWidget):
         painter.setPen(QPen(QColor(210, 210, 210), 1))
         painter.drawRect(rect)
 
-        # Верхняя разделительная линия
+        # Верхняя разделительная линия подвала
         painter.setPen(QPen(QColor(180, 180, 180), 1))
         painter.drawLine(rect.topLeft(), rect.topRight())
 
-        # Эффект внутренней тени сверху (сдвиг по Y на 1 пиксель)
-        painter.setPen(QPen(QColor(225, 225, 225), 1))
-        painter.drawLine(rect.topLeft() + QPointF(0, 1), rect.topRight() + QPointF(0, 1))
-
-        # 2. Отрисовка текстовой информации (прямо на холсте панели)
+        # 2. Отрисовка текстовой информации справа (смещаем под кнопки)
         painter.setFont(QFont("Arial", 8))
 
-        # Левая секция: Статусное сообщение
+        # Левая секция подвала (после кнопок сетки): Статусное сообщение
         painter.setPen(QPen(QColor(60, 60, 60), 1))
-        painter.drawText(rect.adjusted(10, 0, -10, 0), Qt.AlignVCenter | Qt.AlignLeft, self._status_text)
-
-        # Центральная секция: Режим
-        if self._design_mode:
-            painter.setPen(QPen(QColor(100, 100, 150), 1))
-            mode_str = "Режим: проектирование"
-        else:
-            painter.setPen(QPen(QColor(60, 120, 60), 1))
-            mode_str = "Режим: просмотр"
-        painter.drawText(rect, Qt.AlignVCenter | Qt.AlignCenter, mode_str)
-
-        # Правая секция: Масштаб и Координаты мыши
-        # Сначала определяем цвет масштаба
-        if self._zoom_percent == 100:
-            zoom_color = QColor(60, 120, 60)
-        elif self._zoom_percent < 100:
-            zoom_color = QColor(100, 100, 200)
-        else:
-            zoom_color = QColor(200, 100, 100)
+        painter.drawText(rect.adjusted(260, 0, -10, 0), Qt.AlignmentFlag.AlignVCenter | Qt.AlignmentFlag.AlignLeft, self._status_text)
 
         zoom_str = f"  {self._zoom_percent}%"
         coord_str = f"x: {self._current_x}, y: {self._current_y}  | "
 
         # Отрисовка координат мыши (моноширинный шрифт)
-        painter.setFont(QFont("Courier New", 8, QFont.Bold))
+        painter.setFont(QFont("Courier New", 8, QFont.Weight.Bold))
         painter.setPen(QPen(QColor(80, 80, 80), 1))
-        painter.drawText(rect.adjusted(0, 0, -50, 0), Qt.AlignVCenter | Qt.AlignRight, coord_str)
+        painter.drawText(rect.adjusted(0, 0, -50, 0), Qt.AlignmentFlag.AlignVCenter | Qt.AlignmentFlag.AlignRight, coord_str)
 
         # Отрисовка процентов масштаба
-        painter.setFont(QFont("Arial", 8, QFont.Bold))
-        painter.setPen(QPen(zoom_color, 1))
-        painter.drawText(rect.adjusted(0, 0, -10, 0), Qt.AlignVCenter | Qt.AlignRight, zoom_str)
+        painter.setFont(QFont("Arial", 8, QFont.Weight.Bold))
+        painter.setPen(QPen(QColor(60, 120, 60), 1))
+        painter.drawText(rect.adjusted(0, 0, -10, 0), Qt.AlignmentFlag.AlignVCenter | Qt.AlignmentFlag.AlignRight, zoom_str)

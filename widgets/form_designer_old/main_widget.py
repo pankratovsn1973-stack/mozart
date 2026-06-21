@@ -1,198 +1,138 @@
 # widgets/form_designer_old/main_widget.py
 # -*- coding: utf-8 -*-
-"""
-Модуль предоставляет класс FormDesigner (Визуальный редактор форм Mozart ERP).
-Является центральным графическим контейнером рабочей области дизайнера интерфейсов.
-Исправлен баг TypeError при добавлении DesignerToolbar путем динамического поиска UI-виджета.
-"""
 
-import os
-from PySide6.QtWidgets import (QWidget, QHBoxLayout, QVBoxLayout, QSplitter,
-                               QMessageBox, QApplication, QToolBar)
-from PySide6.QtCore import Qt, Slot
+from PySide6.QtWidgets import QWidget, QHBoxLayout, QVBoxLayout, QGraphicsView, QSplitter
+from PySide6.QtCore import Qt
+from PySide6.QtGui import QPainter
 
-# Родные импорты архитектуры Mozart
 from .form_scene import FormDesignerScene
-from .form_view import FormDesignerView
 from .property_editor import PropertyEditor
-from .designer_toolbar import DesignerToolbar
 from .palette_widget import PaletteWidget
+from .toolbar_bar import ToolBarBar
 
 
 class FormDesigner(QWidget):
-    """
-    Центральный виджет конструктора экранных форм.
-    Координирует связь между графическим холстом, палитрой и инспектором свойств.
-    """
+    """Главный виджет WYSIWYG-дизайнера форм Mozart ERP с верхним тулбаром метаданных."""
 
     def __init__(self, parent=None, db=None, form_id=None):
         super().__init__(parent)
         self.db = db
         self.form_id = form_id
-
-        # Ссылка на активный визуальный холст формы (FormBackground)
+        self.scene = None
+        self.view = None
+        self.toolbar_panel = None
+        self.palette_panel = None
+        self.property_panel = None
         self.runtime_form = None
 
-        # Инициализируем графическую сцену и вьюпорт отображения
-        self.scene = FormDesignerScene(self)
-        self.view = FormDesignerView(self.scene, self)
-
-        # Разворачиваем элементы управления интерфейса дизайнера
         self.setup_ui()
 
     def setup_ui(self):
-        """Сборка каркаса и интерфейсных панелей визуального редактора."""
-        main_layout = QVBoxLayout()
-        main_layout.setContentsMargins(2, 2, 2, 2)
-        main_layout.setSpacing(2)
+        # Главный вертикальный макет всего окна конфигуратора
+        main_layout = QVBoxLayout(self)
+        main_layout.setContentsMargins(0, 0, 0, 0)
+        main_layout.setSpacing(0)
 
-        # 1. Верхняя панель инструментов (Тулбар)
-        self.toolbar = DesignerToolbar(self)
+        # РЯД 1 (ВЕРХНИЙ): Размещаем панель инструментов строго НАД сценой и палитрой
+        self.toolbar_panel = ToolBarBar(self)
+        # Передаем базу данных в тулбар для автоматической вычитки метаданных
+        self.toolbar_panel.set_db(self.db)
+        main_layout.addWidget(self.toolbar_panel)
 
-        # ИСПРАВЛЕНО: Динамически определяем, где внутри класса DesignerToolbar
-        # спрятан настоящий QWidget, чтобы избежать падения TypeError в QBoxLayout.
-        toolbar_widget = None
+        # РЯД 2: Разделитель для трех нижних секций (Палитра -> Холст -> Свойства)
+        splitter = QSplitter(Qt.Orientation.Horizontal)
 
-        if isinstance(self.toolbar, QWidget) or isinstance(self.toolbar, QToolBar):
-            toolbar_widget = self.toolbar
-        elif hasattr(self.toolbar, 'toolbar') and isinstance(self.toolbar.toolbar, QWidget):
-            toolbar_widget = self.toolbar.toolbar
-        elif hasattr(self.toolbar, 'tb') and isinstance(self.toolbar.tb, QWidget):
-            toolbar_widget = self.toolbar.tb
-        elif hasattr(self.toolbar, 'get_widget') and callable(self.toolbar.get_widget):
-            toolbar_widget = self.toolbar.get_widget()
-        elif hasattr(self.toolbar, 'get_toolbar') and callable(self.toolbar.get_toolbar):
-            toolbar_widget = self.toolbar.get_toolbar()
-
-        # Если виджет успешно извлечен — добавляем его в компоновщик
-        if toolbar_widget:
-            main_layout.addWidget(toolbar_widget)
-        else:
-            # Если это кастомный контейнер элементов, просто пропускаем его добавление в компоновку,
-            # чтобы не ронять инициализацию всего графического редактора форм.
-            pass
-
-        # Основной рабочий разделитель (Сплиттер)
-        splitter = QSplitter(Qt.Horizontal, self)
-        main_layout.addWidget(splitter)
-
-        # 2. Левая панель: Палитра компонентов Mozart ERP
+        # СЕКЦИЯ 1 (ЛЕВАЯ): Палитра доступных контролов
         self.palette_panel = PaletteWidget(self)
         splitter.addWidget(self.palette_panel)
 
-        # 3. Центральная область: Графический холст (Сцена/Вью)
-        splitter.addWidget(self.view)
+        # СЕКЦИЯ 2 (ЦЕНТРАЛЬНАЯ): Холст сцены дизайнера
+        canvas_container = QWidget()
+        canvas_layout = QVBoxLayout(canvas_container)
+        canvas_layout.setContentsMargins(0, 0, 0, 0)
+        canvas_layout.setSpacing(0)
 
-        # 4. Правая панель: Инспектор свойств (Property Editor)
+        self.scene = FormDesignerScene(self)
+        self.scene.set_db(self.db)
+
+        self.view = QGraphicsView(self.scene)
+        self.view.setRenderHint(QPainter.RenderHint.Antialiasing, True)
+        self.view.setRenderHint(QPainter.RenderHint.SmoothPixmapTransform, True)
+        self.view.setAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignTop)
+        self.view.setDragMode(QGraphicsView.DragMode.RubberBandDrag)
+
+        # Разрешаем холсту принимать Drag-and-Drop элементы из палитры
+        self.view.setAcceptDrops(True)
+        canvas_layout.addWidget(self.view)
+
+        splitter.addWidget(canvas_container)
+
+        # СЕКЦИЯ 3 (ПРАВАЯ): Инспектор свойств PropertyEditor
         self.property_panel = PropertyEditor(self)
         splitter.addWidget(self.property_panel)
 
-        # Задаем пропорции панелей: Палитра, Холст, Инспектор
-        splitter.setSizes([150, 750, 300])
+        # Задаем гармоничные пропорции распределения ширины
+        splitter.setSizes([180, 750, 250])
+        main_layout.addWidget(splitter)
 
-        # Устанавливаем собранный лейаут на виджет
-        if self.layout() is None:
-            self.setLayout(main_layout)
-        else:
-            self.layout().addLayout(main_layout)
+        # Подключаем сигналы сетки и привязки
+        self.toolbar_panel.snap_toggled.connect(self.scene.set_snap_enabled)
+        self.toolbar_panel.grid_toggled.connect(self.scene.set_grid_visible)
+        self.toolbar_panel.grid_size_changed.connect(self.scene.set_grid_size)
 
-        # ========== СИНХРОНИЗАЦИЯ СИГНАЛОВ СЦЕНЫ ==========
+        # Коммутируем каскадные сигналы назначения формы к параметрам бланка
+        self.toolbar_panel.form_role_changed.connect(self._on_form_role_changed)
+        self.toolbar_panel.entity_changed.connect(self._on_form_entity_changed)
+        self.toolbar_panel.interface_changed.connect(self._on_form_interface_changed)
+        self.toolbar_panel.menu_item_changed.connect(self._on_form_menu_item_changed)
+
+        # Подключаем сигналы ядра сцены к инспектору свойств
         self.scene.control_selected.connect(self._on_control_selected)
-        self.scene.form_resized.connect(self._on_form_resized_on_scene)
-        self.scene.save_requested.connect(self.save_form_to_db)
         self.scene.geometry_changed.connect(self._on_geometry_changed)
 
-        # Подключаем обратную связь от инспектора свойств к элементам сцены
-        self.property_panel.property_changed.connect(self._on_property_edited_in_panel)
+    def init_form(self, width, height, title):
+        """Метод-мост для совместимости с FormPropertiesDialog."""
+        return self.load_form_template(width, height, title)
 
-    def init_form(self, width: int, height: int, title: str):
-        """Создает и разворачивает на холсте чистую подложку проектируемой формы."""
+    def load_form_template(self, width, height, title, controls_data=None):
+        """Инициализирует чистый бланк формы или восстанавливает сохраненную из БД структуру."""
         self.runtime_form = self.scene.init_form(width, height, title)
 
-        # Передаем форму в инспектор для отображения стартовых параметров
+        if controls_data:
+            self.scene.load_controls(controls_data)
+
+        self.property_panel.set_form(self)
+        return self.runtime_form
+
+    def _on_form_role_changed(self, role_alias):
+        """Записывает выбранную роль (edit/view/custom/main_route) в параметры формы."""
         if self.runtime_form:
-            self.property_panel.set_active_item("form_root", self.runtime_form)
+            setattr(self.runtime_form, 'form_role', role_alias)
+            self.property_panel.set_form(self)
 
-    @Slot(object)
-    def _on_control_selected(self, selected_obj):
-        """Обработчик выделения элементов на холсте сцены."""
-        if not selected_obj:
-            self.property_panel.set_active_item(None, None)
-            return
+    def _on_form_entity_changed(self, entity_alias):
+        """Связывает бланк формы с выбранной бизнес-сущностью Mozart ERP."""
+        if self.runtime_form:
+            self.runtime_form.entity_alias = entity_alias
+            self.property_panel.set_form(self)
 
-        if selected_obj == self.scene.background or hasattr(selected_obj, 'title_bar'):
-            self.property_panel.set_active_item("form_root", selected_obj)
-            return
+    def _on_form_interface_changed(self, interface_id):
+        """Связывает форму с конкретным ID интерфейсной роли из auth.roles."""
+        if self.runtime_form:
+            setattr(self.runtime_form, 'interface_role_id', interface_id)
+            self.property_panel.set_form(self)
 
-        control_item = None
-        for item in self.scene.items():
-            if hasattr(item, 'widget') and item.widget() == selected_obj:
-                control_item = item
-                break
+    def _on_form_menu_item_changed(self, menu_id):
+        """Связывает форму с выбранным первичным ключом (id) из meta.menu."""
+        if self.runtime_form:
+            setattr(self.runtime_form, 'target_menu_id', menu_id)
+            self.property_panel.set_form(self)
 
-        if not control_item and hasattr(selected_obj, 'control_id'):
-            control_item = selected_obj
+    def _on_control_selected(self, control_item):
+        """Слот фокуса элемента: переключает строки PropertyEditor."""
+        self.property_panel.set_control(control_item)
 
-        target = control_item if control_item else selected_obj
-        c_id = getattr(target, 'control_id', '')
-
-        self.property_panel.set_active_item(c_id, target)
-
-    @Slot(str, int, int, int, int)
     def _on_geometry_changed(self, control_id, x, y, width, height):
-        """Синхронизация координат при перетаскивании элементов мымшой."""
-        sel_item = getattr(self.scene, 'selected_control', None)
-        sel_id = getattr(sel_item, 'control_id', None)
-
-        if sel_item and sel_id == control_id:
-            self.property_panel._block_sync = True
-
-            for row in range(self.property_panel.rowCount()):
-                name_item = self.property_panel.item(row, 0)
-                if name_item:
-                    prop_name = name_item.data(Qt.UserRole)
-                    val_item = self.property_panel.item(row, 1)
-                    if val_item:
-                        if prop_name == "x":
-                            val_item.setText(str(x))
-                        elif prop_name == "y":
-                            val_item.setText(str(y))
-                        elif prop_name == "width":
-                            val_item.setText(str(width))
-                        elif prop_name == "height":
-                            val_item.setText(str(height))
-
-            self.property_panel._block_sync = False
-
-    @Slot(float, float)
-    def _on_form_resized_on_scene(self, width, height):
-        """Синхронизация числовых значений в таблице при изменении размеров формы мышом."""
-        sel_item = getattr(self.scene, 'selected_control', None)
-
-        if sel_item == self.scene.background or (sel_item and hasattr(sel_item, 'title_bar')):
-            self.property_panel._block_sync = True
-            for row in range(self.property_panel.rowCount()):
-                name_item = self.property_panel.item(row, 0)
-                if name_item:
-                    prop_name = name_item.data(Qt.UserRole)
-                    val_item = self.property_panel.item(row, 1)
-                    if val_item:
-                        if prop_name == "width":
-                            val_item.setText(str(int(width)))
-                        elif prop_name == "height":
-                            val_item.setText(str(int(height)))
-            self.property_panel._block_sync = False
-
-    @Slot(str, str, object)
-    def _on_property_edited_in_panel(self, control_id, property_name, new_value):
-        """Обработчик ручных правок параметров внутри таблицы инспектора свойств."""
-        pass
-
-    def save_form_to_db(self):
-        """Сериализация структуры визуальных элементов холста и сохранение в PostgreSQL."""
-        if not self.db or not self.form_id:
-            return
-        try:
-            QApplication.statusTip()
-        except Exception as e:
-            QMessageBox.critical(self, "Ошибка сохранения", f"Не удалось записать форму в БД:\n{str(e)}")
+        """Слот онлайн-обновления геометрических ячеек инспектора во время движения мыши."""
+        if hasattr(self, 'property_panel') and hasattr(self.property_panel, 'update_geometry_values'):
+            self.property_panel.update_geometry_values(x, y, width, height)

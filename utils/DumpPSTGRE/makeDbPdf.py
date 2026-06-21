@@ -39,7 +39,7 @@ SCHEMAS_CONFIG = {
 }
 EXTRA_DATA_TABLES = []   # список строк 'schema.table' для принудительной выгрузки данных (даже если ALL=-1)
 DATA_LIMIT = 10          # максимум строк данных на таблицу
-OUTPUT_FILE = "db_structure.pdf"
+OUTPUT_FILE = "../db_structure.pdf"
 
 # Шрифт с кириллицей (если не найден – будет Helvetica)
 CYRILLIC_FONT = None

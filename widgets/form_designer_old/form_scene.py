@@ -1,13 +1,9 @@
 # widgets/form_designer_old/form_scene.py
 # -*- coding: utf-8 -*-
-"""
-Модуль предоставляет класс FormDesignerScene (наследник QGraphicsScene).
-Управляет графическим холстом визуального редактора форм Mozart ERP.
-Исправлен баг отсутствия свойства selected_control в конструкторе сцены.
-"""
 
 from PySide6.QtWidgets import QGraphicsScene
-from PySide6.QtCore import Qt, QRectF, Signal
+from PySide6.QtCore import Qt, QRectF, Signal, QTimer
+from PySide6.QtGui import QPen, QColor
 
 from .form_background import FormBackground
 from .resize_handle import ResizeHandle
@@ -17,10 +13,10 @@ from .scene_controls_mixin import ControlsMixin
 
 
 class FormDesignerScene(QGraphicsScene, GridMixin, EventsMixin, ControlsMixin):
-    """Главная графическая сцена визуального редактора форм."""
-
     control_selected = Signal(object)
     form_resized = Signal(float, float)
+    form_moved = Signal()
+    form_geometry_changed = Signal()
     save_requested = Signal()
     control_added = Signal(object)
     control_deleted = Signal(str)
@@ -30,44 +26,81 @@ class FormDesignerScene(QGraphicsScene, GridMixin, EventsMixin, ControlsMixin):
         super().__init__(parent)
         self.background = None
         self.controls = {}
-
-        # ИСПРАВЛЕНО: Добавлено свойство трекинга выделенного объекта для main_widget.py (строка 173)
         self.selected_control = None
+        self.db = None
 
+        self.setSceneRect(0, 0, 3000, 2000)
         self._init_grid()
 
-    def init_form(self, width: float, height: float, title: str) -> FormBackground:
-        """Инициализация холста проектируемой формы и создание 8 волшебных точек."""
+    def set_db(self, db):
+        self.db = db
+
+    def init_form(self, width: float, height: float, title: str = "") -> FormBackground:
         if self.background:
-            if hasattr(self.background, 'title_bar'): self.removeItem(self.background.title_bar)
-            if hasattr(self.background, 'tool_bar'): self.removeItem(self.background.tool_bar)
-            if hasattr(self.background, 'status_bar'): self.removeItem(self.background.status_bar)
             for handle in getattr(self.background, '_handles', []):
-                self.removeItem(handle)
-            self.removeItem(self.background)
+                if handle and handle.scene() == self:
+                    self.removeItem(handle)
+            if self.background.scene() == self:
+                self.removeItem(self.background)
+            self.background = None
 
         self.background = FormBackground(width, height, title)
+        self.background.setPos(0, 0)
         self.addItem(self.background)
 
-        if self.background.title_bar: self.addItem(self.background.title_bar)
-        if self.background.tool_bar: self.addItem(self.background.tool_bar)
-        if self.background.status_bar: self.addItem(self.background.status_bar)
+        self.background.form_geometry_changed.connect(self._on_form_geometry_changed)
+        self.background.form_resized.connect(self._on_form_resized)
 
-        self.background._handles = []
-        for pos_key in ResizeHandle.POSITIONS.keys():
-            handle = ResizeHandle(pos_key, self.background)
-            self.addItem(handle)
-            self.background._handles.append(handle)
+        handle = ResizeHandle(4, self.background, parent=self.background)
+        self.background._handles = [handle]
+        self.background.update_handles_position()
 
-        self.setSceneRect(self.itemsBoundingRect())
+        # Синхронизируем тулбар под текущие дефолтные настройки сцены
+        if hasattr(self.background, 'toolbar') and self.background.toolbar:
+            tb = self.background.toolbar
+            if hasattr(tb, 'btn_grid'):
+                tb.btn_grid.setChecked(getattr(self, '_grid_visible', True))
+            if hasattr(tb, 'btn_bind'):
+                tb.btn_bind.setChecked(getattr(self, '_snap_enabled', False))
+
+        self.setSceneRect(0, 0, 3000, 2000)
         self.update()
+
+        for view in self.views():
+            view.setAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignTop)
+            view.centerOn(0.0, 0.0)
+            QTimer.singleShot(0, lambda v=view: self._reset_view_scrollbars(v))
+
         return self.background
 
+    def _reset_view_scrollbars(self, view):
+        if not view:
+            return
+        if view.horizontalScrollBar():
+            view.horizontalScrollBar().setValue(0)
+        if view.verticalScrollBar():
+            view.verticalScrollBar().setValue(0)
+
+    def _on_form_geometry_changed(self):
+        self.form_geometry_changed.emit()
+
+    def _on_form_resized(self, width, height):
+        self.form_resized.emit(width, height)
+
     def select_control(self, widget_or_item):
-        """
-        Метод оповещения сцены о выборе конкретного контрола.
-        Синхронизирует внутреннее свойство selected_control и выстреливает сигнал.
-        """
-        # ИСПРАВЛЕНО: Сохраняем ссылку на выделенный графический элемент или форму
         self.selected_control = widget_or_item if widget_or_item else self.background
         self.control_selected.emit(self.selected_control)
+
+    def update_handles_position(self):
+        if self.background and hasattr(self.background, 'update_handles_position'):
+            self.background.update_handles_position()
+
+    def drawItems(self, painter, numItems, items, options, widget=None):
+        super().drawItems(painter, numItems, items, options, widget)
+        for item in items:
+            if item.isSelected() and item != self.background and not isinstance(item, ResizeHandle):
+                painter.save()
+                painter.setPen(QPen(QColor('#0066ff'), 1.5, Qt.PenStyle.DashLine))
+                painter.setBrush(Qt.NoBrush)
+                painter.drawRect(item.boundingRect())
+                painter.restore()

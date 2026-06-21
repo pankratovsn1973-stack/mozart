@@ -8,31 +8,36 @@ from .base_control import BaseControl
 from .data_source_mixin import DataSourceMixin
 
 
-class MozartOptionGroup(QWidget, BaseControl, DataSourceMixin):
-    value_changed = Signal(str)
+class MozartOptionGroup(QWidget, DataSourceMixin, BaseControl):
+    value_changed = Signal(object)
+    items_loaded = Signal()
 
     def __init__(self, parent=None):
         QWidget.__init__(self, parent)
-        BaseControl.__init__(self)
         DataSourceMixin.__init__(self)
+        BaseControl.__init__(self)
         self._orientation = "vertical"
         self._button_group = QButtonGroup(self)
         self._radio_buttons = []
         self._button_group.buttonClicked.connect(self._on_button_clicked)
-        # Создаём пустой layout сразу, чтобы избежать ошибки
         self._main_layout = QVBoxLayout(self)
         self._main_layout.setContentsMargins(5, 5, 5, 5)
 
     def _on_button_clicked(self, button):
-        self._is_dirty = button.property('value') != self._original_value
-        self.value_changed.emit(button.property('value'))
+        val = button.property('value')
+        self._is_dirty = val != self._original_value
+        self.value_changed.emit(val)
 
     def _apply_readonly(self):
         for btn in self._radio_buttons:
             btn.setEnabled(not self._is_readonly)
 
+    def set_design_mode(self, design_mode):
+        self._design_mode = design_mode
+        for btn in self._radio_buttons:
+            btn.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents, design_mode)
+
     def _clear_layout(self):
-        """Удаляет все виджеты из layout."""
         if self._main_layout:
             while self._main_layout.count():
                 item = self._main_layout.takeAt(0)
@@ -40,14 +45,11 @@ class MozartOptionGroup(QWidget, BaseControl, DataSourceMixin):
                     item.widget().deleteLater()
 
     def _update_control(self):
-        """Обновляет радиокнопки из источника данных."""
-        # Удаляем старые кнопки
         for btn in self._radio_buttons:
             self._button_group.removeButton(btn)
         self._radio_buttons.clear()
         self._clear_layout()
 
-        # Создаём layout заново (если orientation изменился)
         if self._orientation == "horizontal":
             if not isinstance(self._main_layout, QHBoxLayout):
                 self._clear_layout()
@@ -59,13 +61,12 @@ class MozartOptionGroup(QWidget, BaseControl, DataSourceMixin):
                 self._main_layout = QVBoxLayout(self)
                 self._main_layout.setContentsMargins(5, 5, 5, 5)
 
-        # Создаём кнопки из элементов
         for item in self.get_items():
             rb = QRadioButton(item["text"], self)
             rb.setProperty('value', item["value"])
             rb.setEnabled(not self._is_readonly)
-            if self._design_mode:
-                rb.setAttribute(Qt.WA_TransparentForMouseEvents, True)
+            if getattr(self, '_design_mode', False):
+                rb.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents, True)
             self._button_group.addButton(rb)
             self._main_layout.addWidget(rb)
             self._radio_buttons.append(rb)
@@ -80,7 +81,7 @@ class MozartOptionGroup(QWidget, BaseControl, DataSourceMixin):
     def orientation(self, value):
         if value in ("vertical", "horizontal"):
             self._orientation = value
-            if not self._design_mode:
+            if not getattr(self, '_design_mode', False):
                 self._update_control()
 
     @property
@@ -95,15 +96,15 @@ class MozartOptionGroup(QWidget, BaseControl, DataSourceMixin):
     def properties(self):
         props = BaseControl.properties.fget(self)
         props.update({
-            'source_type': self._source_type,
+            'source_type': getattr(self, '_source_type', 'static'),
             'entity_alias': self._entity_alias,
-            'display_field': self._display_field,
-            'value_field': self._value_field,
-            'items_json': self._items_json,
+            'display_field': getattr(self, '_display_field', 'cname'),
+            'value_field': getattr(self, '_value_field', 'id'),
+            'items_json': getattr(self, '_items_json', '[]'),
             'orientation': self._orientation,
-            'filter_expression': self._filter_expression,
-            'order_by': self._order_by,
-            'query': self._query,
+            'filter_expression': getattr(self, '_filter_expression', ''),
+            'order_by': getattr(self, '_order_by', ''),
+            'query': getattr(self, '_query', ''),
         })
         return props
 
@@ -112,38 +113,36 @@ class MozartOptionGroup(QWidget, BaseControl, DataSourceMixin):
         if not value:
             return
         BaseControl.properties.fset(self, value)
-        if 'source_type' in value:
-            self._source_type = value['source_type']
-        if 'entity_alias' in value:
-            self._entity_alias = value['entity_alias']
-        if 'display_field' in value:
-            self._display_field = value['display_field']
-        if 'value_field' in value:
-            self._value_field = value['value_field']
-        if 'items_json' in value:
-            self._items_json = value['items_json']
-        if 'orientation' in value:
-            self._orientation = value['orientation']
-        if 'filter_expression' in value:
-            self._filter_expression = value['filter_expression']
-        if 'order_by' in value:
-            self._order_by = value['order_by']
-        if 'query' in value:
-            self._query = value['query']
-        if not self._design_mode:
+        if 'source_type' in value: self._source_type = value['source_type']
+        if 'entity_alias' in value: self._entity_alias = value['entity_alias']
+        if 'display_field' in value: self._display_field = value['display_field']
+        if 'value_field' in value: self._value_field = value['value_field']
+        if 'items_json' in value: self._items_json = value['items_json']
+        if 'orientation' in value: self._orientation = value['orientation']
+        if 'filter_expression' in value: self._filter_expression = value['filter_expression']
+        if 'order_by' in value: self._order_by = value['order_by']
+        if 'query' in value: self._query = value['query']
+
+        if not getattr(self, '_design_mode', False):
             self.load_items()
+        else:
+            self._update_control()
 
     def set_value(self, value):
         self.blockSignals(True)
         if isinstance(value, str) and not value.isdigit():
-            value = self.find_value_by_text(value)
+            if hasattr(self, 'find_value_by_text'):
+                value = self.find_value_by_text(value)
         for btn in self._radio_buttons:
             if btn.property('value') == value:
                 btn.setChecked(True)
                 break
         else:
-            for btn in self._radio_buttons:
-                btn.setChecked(False)
+            checked = self._button_group.checkedButton()
+            if checked:
+                self._button_group.setExclusive(False)
+                checked.setChecked(False)
+                self._button_group.setExclusive(True)
         self._original_value = value
         self._is_dirty = False
         self.blockSignals(False)
