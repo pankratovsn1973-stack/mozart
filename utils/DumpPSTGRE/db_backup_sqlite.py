@@ -14,10 +14,10 @@ class BackupDbManager:
     def load_settings(self):
         """Чтение параметров из базы данных. Возвращает (target_path, file_name, checked_nodes)."""
         if not os.path.exists(self.db_path):
-            return "", "mozart_dump.sql", []
+            return "", "mozart_dump.txt", []
 
         conn = None
-        target_path, file_name = "", "mozart_dump.sql"
+        target_path, file_name = "", "mozart_dump.txt"
         checked_nodes = []
 
         try:

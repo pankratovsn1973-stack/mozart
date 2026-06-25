@@ -89,7 +89,7 @@ class DbBackupToolWidget(QWidget):
 
         right_layout.addWidget(QLabel("<b>Имя файла резервной копии (.sql):</b>"))
         self.edt_file_name = QLineEdit(self)
-        self.edt_file_name.setText("mozart_dump.sql")
+        self.edt_file_name.setText("mozart_dump.txt")
         right_layout.addWidget(self.edt_file_name)
 
         right_layout.addStretch(1)
