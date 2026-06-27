@@ -3,11 +3,11 @@
 
 from PySide6.QtWidgets import QWidget, QHBoxLayout, QLineEdit, QPushButton, QMessageBox, QLabel
 from PySide6.QtCore import Property, Signal, Qt
-
 from .base_control import BaseControl
 
 
 class MozartReference(QWidget, BaseControl):
+    """ERP-компонент Ссылка с поддержкой дизайн-маскирования и уникальной идентификацией."""
     value_changed = Signal(object)
 
     def __init__(self, parent=None):
@@ -15,15 +15,15 @@ class MozartReference(QWidget, BaseControl):
         BaseControl.__init__(self)
 
         # Настройки ERP метаданных
-        self._binding_field = ""
-        self._entity_alias = ""
+        self._binding_field = " "
+        self._entity_alias = " "
         self._display_field = "cname"
-        self._selector_form = ""
+        self._selector_form = " "
 
         self._current_id = None
-        self._display_value = ""
+        self._display_value = " "
         self._db = None
-        self._label = "Ссылка:"
+        self._label = "Ссылка: "
         self._design_mode = False
         self.layout_assigned = None
 
@@ -74,19 +74,27 @@ class MozartReference(QWidget, BaseControl):
                 self.label_widget.setVisible(True)
                 if not self._design_mode:
                     self.label_widget.setMinimumWidth(
-                        self.label_widget.fontMetrics().horizontalAdvance(self._label) + 5)
+                        self.label_widget.fontMetrics().horizontalAdvance(self._label) + 5
+                    )
             else:
-                self.label_widget.setText("")
+                self.label_widget.setText(" ")
                 self.label_widget.setVisible(False)
 
-    def set_design_mode(self, design_mode):
-        """Динамическое переключение макета под режим дизайна или рантайма."""
+    def set_design_mode(self, design_mode, full_path="", alias=""):
+        """
+        Динамическое переключение макета под режим дизайна или рантайма.
+
+        Args:
+            design_mode: True для режима конструктора, False для рантайма.
+            full_path: Полный путь родителя из коллекции (например, "tab1.ref1").
+            alias: Собственный алиас элемента (например, "txtBX1").
+        """
         self._design_mode = design_mode
         self.btn_select.setEnabled(not design_mode)
         self.btn_clear.setEnabled(not design_mode)
 
         if design_mode and self.layout_assigned:
-            # Запоминаем геометрию элементов
+            # Запоминаем геометрию элементов до разрушения макета
             geo_label = self.label_widget.geometry()
             geo_runtime_edit = self.edit_runtime.geometry()
             geo_select = self.btn_select.geometry()
@@ -96,12 +104,17 @@ class MozartReference(QWidget, BaseControl):
             self.edit_runtime.deleteLater()
             self.edit_runtime = None
 
+            # ✅ ГЕНЕРАЦИЯ УНИКАЛЬНОГО СИСТЕМНОГО ИМЕНИ НА ОСНОВЕ ПУТИ И АЛИАСА
+            # Если путь есть, формируем составной ключ. Иначе используем дефолт.
+            unique_sys_name = f"{full_path}.{alias}" if full_path and alias else "txt_of_ref"
+
             # Подменяем безопасной QLabel-заглушкой с внешним видом текстбокса
             self.edit_design = QLabel(self)
-            self.edit_design.setObjectName("txt_of_ref")
+            self.edit_design.setObjectName(unique_sys_name)  # <--- Уникальный ID для коллекции
+            self.edit_design.name = "txt_of_ref"  # <--- Базовое имя для логики клика
             self.edit_design.setAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter)
             self.edit_design.setStyleSheet(
-                "border: 1px solid #b0b0b0; background-color: #ffffff; padding-left: 5px; color: #555555;"
+                "border: 1px solid #b0b0b0; background-color: #ffffff; padding-left: 5px; color: #555555; "
             )
             self.edit_design.setText(f"Справочник: {self._entity_alias}" if self._entity_alias else "Не выбрано")
             self.edit_design.show()
@@ -174,13 +187,14 @@ class MozartReference(QWidget, BaseControl):
         target = self.edit_design if self._design_mode else self.edit_runtime
         if target:
             if self._is_required:
-                target.setStyleSheet("border: 1px solid #ff4d4d; background-color: #fff2f2; padding-left: 5px;")
+                target.setStyleSheet("border: 1px solid #ff4d4d; background-color: #fff2f2; padding-left: 5px; ")
             else:
                 if self._design_mode:
                     target.setStyleSheet(
-                        "border: 1px solid #b0b0b0; background-color: #ffffff; padding-left: 5px; color: #555555;")
+                        "border: 1px solid #b0b0b0; background-color: #ffffff; padding-left: 5px; color: #555555; "
+                    )
                 else:
-                    target.setStyleSheet("")
+                    target.setStyleSheet(" ")
 
     @Property(bool)
     def is_readonly(self):
@@ -208,15 +222,19 @@ class MozartReference(QWidget, BaseControl):
     @property
     def properties(self):
         return {
-            'label': self._label, 'binding_field': self._binding_field,
-            'entity_alias': self._entity_alias, 'display_field': self._display_field,
-            'selector_form': self._selector_form, 'is_required': getattr(self, '_is_required', False),
+            'label': self._label,
+            'binding_field': self._binding_field,
+            'entity_alias': self._entity_alias,
+            'display_field': self._display_field,
+            'selector_form': self._selector_form,
+            'is_required': getattr(self, '_is_required', False),
             'is_readonly': getattr(self, '_is_readonly', False),
         }
 
     @properties.setter
     def properties(self, value):
-        if not value: return
+        if not value:
+            return
         self._binding_field = value.get('binding_field', '')
         self._entity_alias = value.get('entity_alias', '')
         self._display_field = value.get('display_field', 'cname')

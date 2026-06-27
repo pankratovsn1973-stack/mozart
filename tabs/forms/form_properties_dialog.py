@@ -20,8 +20,8 @@ class FormPropertiesDialog(PropertyDialogUI):
         if not self.data:
             return
 
-        raw_cname = self.data.get("cname", "")
-        raw_calias = self.data.get("calias", "")
+        raw_cname = self.data.get("cname", " ")
+        raw_calias = self.data.get("calias", " ")
 
         if isinstance(raw_cname, list) and len(raw_cname) > 0:
             sub = raw_cname
@@ -66,7 +66,7 @@ class FormPropertiesDialog(PropertyDialogUI):
                 system_garbage_classes = ('formbackground', 'resizehandle', 'qlineedit', 'qpushbutton')
 
                 for ctrl in raw_controls:
-                    if str(ctrl.get("cclass", "")).lower() not in system_garbage_classes:
+                    if str(ctrl.get("cclass", " ")).lower() not in system_garbage_classes:
                         controls_list.append(ctrl)
             except Exception as e:
                 print(f"[FormPropertiesDialog] Ошибка парсинга mstate_json: {e}")
@@ -115,6 +115,37 @@ class FormPropertiesDialog(PropertyDialogUI):
             if val_id not in self.deleted_control_ids:
                 self.deleted_control_ids.append(val_id)
 
+    def _get_visual_designer_data(self):
+        """
+        Адаптер для сбора данных из нового FormDesignerScene (Unit of Work).
+        Возвращает структуру, совместимую со старым форматом forms_tab.py.
+        """
+        designer = getattr(self, 'designer', None)
+        scene = getattr(designer, 'scene', None) if designer else None
+
+        if not scene or not hasattr(scene, 'prepare_save_data'):
+            return None
+
+        uow_data = scene.prepare_save_data()
+
+        # Объединяем inserts и updates в единый список controls
+        all_controls = []
+        for ctrl in uow_data.get('inserts', []):
+            all_controls.append(ctrl)
+        for ctrl in uow_data.get('updates', []):
+            all_controls.append(ctrl)
+
+        # Добавляем удаленные ID из UOW к локальному буферу диалога
+        for did in uow_data.get('deletes', []):
+            if did not in self.deleted_control_ids:
+                self.deleted_control_ids.append(did)
+
+        return {
+            "controls": all_controls,
+            "deleted_ids": list(self.deleted_control_ids),
+            "mstate_json": {}  # Заполняется ниже в get_data
+        }
+
     def get_data(self) -> dict:
         """Собирает измененные данные и пачку удаленных ID для рекурсивной хранимой процедуры."""
         cname = self.edit_cname.text().strip()
@@ -128,15 +159,32 @@ class FormPropertiesDialog(PropertyDialogUI):
             QMessageBox.warning(self, "Ошибка", "Поля 'Имя' и 'Алиас' обязательны для заполнения!")
             return {}
 
-        designer_payload = {}
-        if hasattr(self, 'designer') and self.designer:
-            designer_payload = self.designer.get_form_data()
+        # ✅ Пытаемся получить данные из нового визуального дизайнера
+        designer_payload = self._get_visual_designer_data()
+
+        # Fallback на старый механизм, если новый дизайнер не активен
+        if not designer_payload:
+            if hasattr(self, 'designer') and self.designer:
+                designer_payload = self.designer.get_form_data()
+            else:
+                designer_payload = {"mstate_json": {}, "controls": [], "deleted_ids": []}
+
+        # Формируем итоговый mstate_json
+        mstate_json = {
+            "geometry": {
+                "width": int(
+                    getattr(self.designer, 'form_width', 942) if hasattr(self.designer, 'form_width') else 942),
+                "height": int(
+                    getattr(self.designer, 'form_height', 928) if hasattr(self.designer, 'form_height') else 928)
+            },
+            "controls": designer_payload.get("controls", [])
+        }
 
         return {
             "cname": cname,
             "calias": calias,
             "ientitytypeid": entity_id,
-            "mstate_json": designer_payload.get("mstate_json", {}),
+            "mstate_json": mstate_json,
             "controls": designer_payload.get("controls", []),
-            "deleted_ids": self.deleted_control_ids  # Передаем буфер удаленных на хранимку в forms_tab
+            "deleted_ids": designer_payload.get("deleted_ids", self.deleted_control_ids)
         }

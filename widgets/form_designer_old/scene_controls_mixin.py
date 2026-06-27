@@ -1,24 +1,20 @@
 # -*- coding: utf-8 -*-
 # /home/sergey/Documents/configurate/widgets/form_designer_old/scene_controls_mixin.py
 
-import uuid
 from PySide6.QtCore import Qt, QPointF
-from PySide6.QtWidgets import QWidget
 from .form_objects_registry import FormObjectsRegistry
 from .designer_data_model import DesignerDataModel
 
 
 class ControlsMixin:
-    """Миксин сцены: каскадный разбор составных контролов и сборка пакета метаданных."""
+    """Миксин: добавление, удаление, выделение контролов, сохранение данных."""
 
     def _init_controls(self):
         self.controls = {}
         self.selected_control = None
-        self.control_handles = []
-        self.db = None
+        # ❌ УДАЛЕНО: self.control_handles больше не нужен
 
-    def add_control(self, control_widget, control_id, control_type, x, y, parent_item=None):
-        """Добавляет контрол на сцену и регистрирует его в low-code реестре."""
+    def add_control(self, control_widget, control_id, control_type, x, y, parent_item=None, calias="", full_path=""):
         from .control_item import ControlItem
 
         try:
@@ -31,9 +27,14 @@ class ControlsMixin:
         item.setPos(QPointF(x, y))
 
         parent_container_id = str(parent_item.control_id) if (
-                    parent_item and hasattr(parent_item, 'control_id')) else None
-        FormObjectsRegistry().register_object(item, parent_container_id=parent_container_id,
-                                              explicit_id=str(control_id))
+                parent_item and hasattr(parent_item, 'control_id')) else None
+        FormObjectsRegistry().register_object(
+            item,
+            parent_container_id=parent_container_id,
+            explicit_id=str(control_id),
+            calias=calias,
+            full_path=full_path
+        )
 
         item.selected_changed.connect(lambda sel: self._on_control_selected(item, sel))
         item.geometry_changed.connect(self._on_control_geometry_changed)
@@ -47,13 +48,19 @@ class ControlsMixin:
         return item
 
     def _on_control_selected(self, control_item, selected):
+        """✅ ИСПРАВЛЕНО: Передача управления фокусом в централизованный метод сцены."""
         if selected and control_item:
             self.selected_control = control_item
+            # Вместо создания маркеров здесь — передаем фокус
+            if hasattr(self, 'set_focused_control'):
+                self.set_focused_control(control_item)
             if hasattr(self, 'control_selected'):
                 self.control_selected.emit(control_item)
         else:
             if len(self.selectedItems()) == 0:
                 self.selected_control = None
+                if hasattr(self, 'set_focused_control'):
+                    self.set_focused_control(None)
                 if hasattr(self, 'control_selected'):
                     self.control_selected.emit(None)
 
@@ -62,7 +69,6 @@ class ControlsMixin:
             self.geometry_changed.emit(str(control_id), int(x), int(y), int(width), int(height))
 
     def get_controls_data(self) -> list:
-        """Сборка элементов с холста. Сверяется с коллекцией метаданных и вырезает невидимые потроха."""
         controls_list = []
         registry = FormObjectsRegistry()
         model = DesignerDataModel()
@@ -139,15 +145,14 @@ class ControlsMixin:
                 'cclass': str(cclass).lower(),
                 'properties': props
             })
-            # Шаг 2: Каскадный сбор внутренних частей составного Python-виджета
+
             actual_widget = getattr(widget_ref, 'widget', lambda: None)() if hasattr(widget_ref,
                                                                                      'widget') else widget_ref
             if actual_widget and hasattr(actual_widget, 'findChildren'):
+                from PySide6.QtWidgets import QWidget
                 for child in actual_widget.findChildren(QWidget):
-
                     if not child.isVisible():
                         continue
-
                     if id(child) in processed_children:
                         continue
 
@@ -156,15 +161,12 @@ class ControlsMixin:
                                                      'lbl_of_ref'):
                         processed_children.add(id(child))
 
-                        # ДЕТЕРМИНИРОВАННЫЙ ПОИСК ID: Ищем по живой связке инстанса
                         child_id = registry.get_id_by_widget(child)
 
-                        # Если связь потеряна, вычисляем ID по эталонной связке имен в DesignerDataModel
                         if child_id == "unknown":
                             for k_instances in list(model.properties_instances.keys()):
                                 k_cid = k_instances
                                 if model.get_value(k_cid, "form_alias") == child_name:
-                                    # Проверяем, совпадает ли родитель
                                     for o_ptr, m_reg in list(registry._registry.items()):
                                         if str(m_reg["control_id"]).strip() == control_id:
                                             child_id = k_cid
@@ -189,8 +191,6 @@ class ControlsMixin:
                                 else:
                                     erp_class = 'textbox'
 
-                        # ИСПРАВЛЕНО: Сохраняем чистые ЛОКАЛЬНЫЕ координаты подконтрола внутри контейнера,
-                        # полностью защищая геометрию от циклического арифметического сложения!
                         child_geo = child.geometry()
                         props_child = {
                             'x': int(child_geo.x()),
