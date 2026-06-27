@@ -1,228 +1,199 @@
 # widgets/form_designer_old/form_background.py
 # -*- coding: utf-8 -*-
 
-from PySide6.QtCore import Qt, QRectF, QPointF, Signal
-from PySide6.QtWidgets import QGraphicsObject, QGraphicsRectItem, QGraphicsItem
-from PySide6.QtGui import QPen, QColor, QPainter
+from PySide6.QtWidgets import QGraphicsRectItem, QGraphicsItem, QApplication, QGraphicsScene
+from PySide6.QtCore import Qt, Signal, QObject, QRectF, QPointF
+from PySide6.QtGui import QPen, QColor, QBrush, QFont, QPainter
 
 
-class TitleBarStub(QGraphicsObject):
-    """
-    Заголовок формы.
-    Использует локальные координаты мыши для перемещения.
-    """
+class FormBackgroundSignals(QObject):
+    form_resized = Signal(float, float)
+    form_geometry_changed = Signal()
 
-    form_moved = Signal(QPointF)
 
-    def __init__(self, parent=None):
+class FormBackground(QGraphicsRectItem):
+    """Графический бланк формы с прорисованными секциями шапки, тулбара, подвала и внутренней сетки."""
+
+    def __init__(self, width=800.0, height=600.0, title="Новая форма", parent=None):
         super().__init__(parent)
-        self.setAcceptHoverEvents(True)
-        self.setZValue(1.0)
-        self._is_dragging = False
-        self._drag_start_pos = QPointF()
+        self.signals = FormBackgroundSignals()
 
-    def get_height(self) -> float:
-        return 32.0
+        self.form_resized = self.signals.form_resized
+        self.form_geometry_changed = self.signals.form_geometry_changed
 
-    def boundingRect(self):
-        if self.parentItem():
-            form = self.parentItem()
-            parent_w = form._width if hasattr(form, '_width') else 400
-            return QRectF(0.0, 0.0, parent_w, self.get_height())
-        return QRectF(0.0, 0.0, 200.0, self.get_height())
+        self.form_alias = "new_form"
+        self.title = str(title)
+        self.form_role = "edit"
+        self.entity_alias = ""
+        self.interface_role_id = ""
+        self.target_menu_id = ""
 
-    def paint(self, painter, option, widget):
-        pass
+        self._width = float(width)
+        self._height = float(height)
+
+        self.setRect(0.0, 0.0, self._width, self._height)
+
+        self.setFlag(QGraphicsItem.GraphicsItemFlag.ItemIsMovable, False)
+        self.setFlag(QGraphicsItem.GraphicsItemFlag.ItemIsSelectable, False)
+        self.setZValue(-10)
+
+        self.setPen(QPen(QColor('#bcbcbc'), 1.5, Qt.PenStyle.SolidLine))
+        self.setBrush(QBrush(QColor('#ffffff')))
+
+        self._handles = []
+        self._is_moving_form = False
+        self._move_start_pos = QPointF()
+
+    @property
+    def width(self):
+        return self._width
+
+    @property
+    def height(self):
+        return self._height
+
+    def set_width(self, val):
+        self.update_geometry(self.pos().x(), self.pos().y(), float(val), self._height)
+
+    def set_height(self, val):
+        self.update_geometry(self.pos().x(), self.pos().y(), self._width, float(val))
+
+    def update_geometry(self, x, y, w, h):
+        self.prepareGeometryChange()
+        self._width = max(200.0, float(w))
+        self._height = max(150.0, float(h))
+        self.setRect(0.0, 0.0, self._width, self._height)
+
+        from .designer_data_model import DesignerDataModel
+        model = DesignerDataModel()
+        model.set_value("form_root", "width", str(int(self._width)))
+        model.set_value("form_root", "height", str(int(self._height)))
+
+        for widget in QApplication.allWidgets():
+            if widget.__class__.__name__ == "PropertyEditor":
+                if getattr(widget, 'current_control_id', None) == "form_root":
+                    widget.update_geometry_values(x, y, self._width, self._height)
+                break
+
+        if self.scene():
+            self.scene().invalidate(self.scene().sceneRect(), QGraphicsScene.SceneLayer.BackgroundLayer)
+
+        self.form_resized.emit(self._width, self._height)
+        self.form_geometry_changed.emit()
+        self.update_handles_position()
+
+    def update_handles_position(self):
+        if not self._handles: return
+        handle = self._handles.__getitem__(0)
+        offset = 2.0
+        handle.setPos(self._width - offset, self._height - offset)
 
     def mousePressEvent(self, event):
-        if event.button() == Qt.MouseButton.LeftButton and self.parentItem():
-            self._is_dragging = True
-            self._drag_start_pos = event.pos()
+        if event.button() == Qt.MouseButton.LeftButton and event.pos().y() <= 32.0:
+            self._is_moving_form = True
+            self._move_start_pos = event.scenePos()
             event.accept()
             return
         super().mousePressEvent(event)
 
     def mouseMoveEvent(self, event):
-        if self._is_dragging and self.parentItem():
-            form = self.parentItem()
+        if self._is_moving_form:
+            current_pos = event.scenePos()
+            delta = current_pos - self._move_start_pos
+            self._move_start_pos = current_pos
 
-            delta = event.pos() - self._drag_start_pos
-            parent_delta = form.mapToParent(delta) - form.mapToParent(QPointF(0, 0))
-            new_pos = form.pos() + parent_delta
+            new_pos = self.pos() + delta
+            self.setPos(new_pos)
 
-            if self.scene():
-                scene_rect = self.scene().sceneRect()
-                new_pos.setX(max(0.0, min(new_pos.x(), scene_rect.width() - form._width)))
-                new_pos.setY(max(0.0, min(new_pos.y(), scene_rect.height() - form._height)))
+            from .designer_data_model import DesignerDataModel
+            model = DesignerDataModel()
+            model.set_value("form_root", "x", str(int(new_pos.x())))
+            model.set_value("form_root", "y", str(int(new_pos.y())))
 
-            form.setPos(new_pos)
+            for widget in QApplication.allWidgets():
+                if widget.__class__.__name__ == "PropertyEditor":
+                    if getattr(widget, 'current_control_id', None) == "form_root":
+                        widget.update_geometry_values(new_pos.x(), new_pos.y(), self._width, self._height)
+                    break
 
-            if hasattr(form, 'update_handles_position'):
-                form.update_handles_position()
-
-            self.form_moved.emit(new_pos)
+            self.form_geometry_changed.emit()
             event.accept()
             return
         super().mouseMoveEvent(event)
 
     def mouseReleaseEvent(self, event):
         if event.button() == Qt.MouseButton.LeftButton:
-            self._is_dragging = False
+            self._is_moving_form = False
             event.accept()
             return
         super().mouseReleaseEvent(event)
 
+    def paint(self, painter, option, widget=None):
+        super().paint(painter, option, widget)
 
-class StatusBarStub(QGraphicsRectItem):
-    def __init__(self, parent=None):
-        super().__init__(parent)
-        self.setPen(Qt.PenStyle.NoPen)
-        self.setBrush(Qt.BrushStyle.NoBrush)
-
-    def get_height(self) -> float:
-        return 24.0
-
-
-class FormBackground(QGraphicsObject):
-    form_geometry_changed = Signal()
-    form_resized = Signal(float, float)
-
-    def __init__(self, width: float = 400, height: float = 300, title: str = "", parent=None):
-        super().__init__(parent)
-        self.title = str(title)
-        self._show_grid = True
-        self._grid_size = 10
-        self.form_alias = ""
-        self._handles = []
-
-        self._width = float(width)
-        self._height = float(height)
-
-        self.setPos(0, 0)
-        self.setFlag(QGraphicsItem.GraphicsItemFlag.ItemIsSelectable, True)
-        self.setFlag(QGraphicsItem.GraphicsItemFlag.ItemIsMovable, False)
-        self.setFlag(QGraphicsItem.GraphicsItemFlag.ItemClipsChildrenToShape, True)
-        self.setZValue(-100)
-
-        self.title_bar = TitleBarStub(self)
-        self.status_bar = StatusBarStub(self)
-        self.title_bar.form_moved.connect(self._on_form_moved)
-
-    def _on_form_moved(self, new_pos):
-        if self.scene() and hasattr(self.scene(), 'form_moved'):
-            self.scene().form_moved.emit()
-
-    def rect(self):
-        return QRectF(0, 0, self._width, self._height)
-
-    @property
-    def width(self) -> float:
-        return self._width
-
-    @property
-    def height(self) -> float:
-        return self._height
-
-    @property
-    def x(self) -> float:
-        return self.pos().x()
-
-    @property
-    def y(self) -> float:
-        return self.pos().y()
-
-    def boundingRect(self):
-        return QRectF(0, 0, self._width, self._height)
-
-    def set_show_grid(self, show: bool):
-        if self._show_grid != show:
-            self._show_grid = show
-            self.update()
-
-    def set_grid_size(self, size: int):
-        new_size = max(2, int(size))
-        if self._grid_size != new_size:
-            self._grid_size = new_size
-            self.update()
-
-    def update_handles_position(self):
-        for handle in self._handles:
-            if handle and hasattr(handle, 'update_position'):
-                handle.update_position()
-
-    def update_geometry(self, parent_x: float, parent_y: float, width: float, height: float):
-        w = max(50.0, float(width))
-        h = max(50.0, float(height))
-
-        self.prepareGeometryChange()
-
-        if hasattr(self, 'title_bar') and self.title_bar:
-            self.title_bar.prepareGeometryChange()
-
-        self._width = w
-        self._height = h
-        self.setPos(QPointF(parent_x, parent_y))
-
-        self.update()
-        self.update_handles_position()
-
-        if self.scene():
-            self.form_resized.emit(w, h)
-            self.form_geometry_changed.emit()
-            self.scene().update()
-
-    def resize_form(self, width: float, height: float):
-        pos = self.pos()
-        self.update_geometry(pos.x(), pos.y(), width, height)
-
-    def set_width(self, width: float):
-        pos = self.pos()
-        self.update_geometry(pos.x(), pos.y(), width, self._height)
-
-    def set_height(self, height: float):
-        pos = self.pos()
-        self.update_geometry(pos.x(), pos.y(), self._width, height)
-
-    def paint(self, painter: QPainter, option, widget=None):
         painter.save()
-        rect = self.rect()
+        try:
+            painter.setRenderHint(QPainter.RenderHint.Antialiasing, True)
 
-        painter.fillRect(rect, QColor('#ffffff'))
+            header_h = 32.0
+            toolbar_h = 28.0
+            footer_h = 24.0
+            work_top = header_h + toolbar_h
+            work_bottom = self._height - footer_h
 
-        if self._show_grid and self._grid_size > 0:
-            grid_pen = QPen(QColor('#d0d0d0'), 0, Qt.PenStyle.SolidLine)
-            painter.setPen(grid_pen)
-            left = int(rect.left())
-            right = int(rect.right())
-            top = int(rect.top())
-            bottom = int(rect.bottom())
-            step = int(self._grid_size)
+            grid_size = 10
+            grid_visible = True
+            if self.scene():
+                grid_size = getattr(self.scene(), 'grid_size', 10)
+                grid_visible = getattr(self.scene(), 'grid_visible', True)
 
-            x = left + step
-            while x < right:
-                painter.drawLine(x, top, x, bottom)
-                x += step
+            if grid_visible and grid_size > 0:
+                grid_pen = QPen(QColor('#e8e8e8'), 0.5, Qt.PenStyle.SolidLine)
+                painter.setPen(grid_pen)
 
-            y = top + step
-            while y < bottom:
-                painter.drawLine(left, y, right, y)
-                y += step
+                x_step = float(grid_size)
+                while x_step < self._width:
+                    painter.drawLine(x_step, work_top, x_step, work_bottom)
+                    x_step += float(grid_size)
 
-        painter.setPen(QPen(QColor('#808080'), 1, Qt.PenStyle.SolidLine))
-        painter.setBrush(Qt.BrushStyle.NoBrush)
-        painter.drawRect(rect)
+                y_step = work_top + (float(grid_size) - (work_top % float(grid_size)))
+                while y_step < work_bottom:
+                    painter.drawLine(0.0, y_step, self._width, y_step)
+                    y_step += float(grid_size)
 
-        painter.fillRect(rect.x(), rect.y(), rect.width(), 32, QColor('#d8d8d8'))
-        painter.setPen(QPen(QColor('#000000')))
-        painter.drawText(rect.x() + 8, rect.y(), rect.width() - 16, 32,
-                         Qt.AlignmentFlag.AlignVCenter | Qt.AlignmentFlag.AlignLeft, self.title)
+            painter.setPen(Qt.PenStyle.NoPen)
+            painter.setBrush(QBrush(QColor('#e0e0e0')))
+            painter.drawRect(QRectF(0, 0, self._width, header_h))
 
-        sb_y = rect.bottom() - 24
-        painter.fillRect(rect.x(), sb_y, rect.width(), 24, QColor('#e0e0e0'))
-        painter.setPen(QPen(QColor('#b0b0b0'), 1))
-        painter.drawLine(rect.x(), sb_y, rect.right(), sb_y)
-        painter.setPen(QPen(QColor('#555555')))
-        painter.drawText(rect.x() + 8, sb_y, rect.width() - 16, 24,
-                         Qt.AlignmentFlag.AlignVCenter | Qt.AlignmentFlag.AlignLeft, "Готово")
+            painter.setPen(QPen(QColor('#333333')))
+            font = QFont("Segoe UI", 10)
+            font.setBold(True)
+            painter.setFont(font)
+            painter.drawText(QRectF(10, 0, self._width - 20, header_h),
+                             Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter, self.title)
 
-        painter.restore()
+            painter.setPen(Qt.PenStyle.NoPen)
+            painter.setBrush(QBrush(QColor('#f0f0f0')))
+            painter.drawRect(QRectF(0, header_h, self._width, toolbar_h))
+
+            painter.setPen(QPen(QColor('#d0d0d0'), 1.0))
+            painter.drawLine(0, work_top, self._width, work_top)
+
+            painter.setPen(Qt.PenStyle.NoPen)
+            painter.setBrush(QBrush(QColor('#f0f0f0')))
+            painter.drawRect(QRectF(0, work_bottom, self._width, footer_h))
+
+            painter.setPen(QPen(QColor('#d0d0d0'), 1.0))
+            painter.drawLine(0, work_bottom, self._width, work_bottom)
+
+            painter.setPen(QPen(QColor('#666666')))
+            font_footer = QFont("Segoe UI", 9)
+            painter.setFont(font_footer)
+            painter.drawText(QRectF(10, work_bottom, self._width - 20, footer_h),
+                             Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter, "Готово")
+
+            painter.setPen(QPen(QColor('#bcbcbc'), 1.5, Qt.PenStyle.SolidLine))
+            painter.setBrush(Qt.BrushStyle.NoBrush)
+            painter.drawRect(self.rect())
+        finally:
+            painter.restore()

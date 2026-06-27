@@ -1,14 +1,15 @@
-# widgets/form_designer_old/scene_controls_mixin.py
 # -*- coding: utf-8 -*-
+# /home/sergey/Documents/configurate/widgets/form_designer_old/scene_controls_mixin.py
 
 import uuid
 from PySide6.QtCore import Qt, QPointF
-from PySide6.QtGui import QGuiApplication
-from .control_item import ControlItem
+from PySide6.QtWidgets import QWidget
+from .form_objects_registry import FormObjectsRegistry
+from .designer_data_model import DesignerDataModel
 
 
 class ControlsMixin:
-    """Миксин: добавление, удаление, выделение контролов."""
+    """Миксин сцены: каскадный разбор составных контролов и сборка пакета метаданных."""
 
     def _init_controls(self):
         self.controls = {}
@@ -16,33 +17,36 @@ class ControlsMixin:
         self.control_handles = []
         self.db = None
 
-    def add_control(self, control_widget, control_id, control_type, x, y):
-        """Добавляет контрол на сцену."""
-        try:
-            x = float(x) if x is not None else 50.0
-            y = float(y) if y is not None else 50.0
-        except (ValueError, TypeError):
-            x = 50.0
-            y = 50.0
+    def add_control(self, control_widget, control_id, control_type, x, y, parent_item=None):
+        """Добавляет контрол на сцену и регистрирует его в low-code реестре."""
+        from .control_item import ControlItem
 
-        item = ControlItem(control_widget, control_id, control_type, parent=self.background)
+        try:
+            x, y = float(x or 50.0), float(y or 50.0)
+        except (ValueError, TypeError):
+            x, y = 50.0, 50.0
+
+        actual_parent = parent_item if parent_item else self.background
+        item = ControlItem(control_widget, control_id, control_type, parent=actual_parent)
         item.setPos(QPointF(x, y))
+
+        parent_container_id = str(parent_item.control_id) if (
+                    parent_item and hasattr(parent_item, 'control_id')) else None
+        FormObjectsRegistry().register_object(item, parent_container_id=parent_container_id,
+                                              explicit_id=str(control_id))
 
         item.selected_changed.connect(lambda sel: self._on_control_selected(item, sel))
         item.geometry_changed.connect(self._on_control_geometry_changed)
 
         self.controls[control_id] = item
-
         if hasattr(control_widget, 'set_design_mode'):
             control_widget.set_design_mode(True)
 
         if hasattr(self, 'control_added'):
             self.control_added.emit(item)
-
         return item
 
     def _on_control_selected(self, control_item, selected):
-        """Обработчик выбора контрола — марштутизирует фокус в PropertyEditor."""
         if selected and control_item:
             self.selected_control = control_item
             if hasattr(self, 'control_selected'):
@@ -53,144 +57,156 @@ class ControlsMixin:
                 if hasattr(self, 'control_selected'):
                     self.control_selected.emit(None)
 
-    def update_control_handles(self):
-        """Обновляет позиции внутренних маркеров у всех выделенных контролов."""
-        for item in self.selectedItems():
-            if isinstance(item, ControlItem) and hasattr(item, 'update_handles_position'):
-                item.update_handles_position()
-
     def _on_control_geometry_changed(self, control_id, x, y, width, height):
-        """Обработчик изменения геометрии контрола."""
-        try:
-            # Шлем сигнал во все доступные слоты сцены для 100% прошивки связей
-            if hasattr(self, 'geometry_changed'):
-                self.geometry_changed.emit(
-                    str(control_id), int(x), int(y), int(width), int(height)
-                )
-        except:
-            pass
+        if hasattr(self, 'geometry_changed'):
+            self.geometry_changed.emit(str(control_id), int(x), int(y), int(width), int(height))
 
-    def delete_control(self, control_id):
-        """Безопасно удаляет контрол со сцены."""
-        if control_id not in self.controls:
-            return
-        item = self.controls[control_id]
-
-        if self.selected_control == item:
-            self.selected_control = None
-            if hasattr(self, 'control_selected'):
-                self.control_selected.emit(None)
-
-        if item and item.scene() == self:
-            self.removeItem(item)
-
-        del self.controls[control_id]
-        if hasattr(self, 'control_deleted'):
-            self.control_deleted.emit(str(control_id))
-
-    def clear_selection(self):
-        """Снимает выделение со всех элементов на сцене штатным методом Qt."""
-        self.clearSelection()
-        self.selected_control = None
-        if hasattr(self, 'control_selected'):
-            self.control_selected.emit(None)
-
-    def focus_on_properties(self, control_item):
-        """Фокусируется на свойствах конкретного контрола."""
-        self.clear_selection()
-        if control_item:
-            control_item.setSelected(True)
-
-    def get_controls_data(self):
-        """Собирает данные всех контролов для сохранения в БД."""
+    def get_controls_data(self) -> list:
+        """Сборка элементов с холста. Сверяется с коллекцией метаданных и вырезает невидимые потроха."""
         controls_list = []
-        for control_id, item in self.controls.items():
-            if not item:
+        registry = FormObjectsRegistry()
+        model = DesignerDataModel()
+
+        system_garbage_classes = ('formbackground', 'resizehandle', 'formbackgroundsignals')
+        system_garbage_ids = ('form_root', '1')
+
+        form_db_id = "841"
+        if hasattr(self, 'background') and self.background:
+            form_db_id = registry.get_id_by_widget(self.background)
+            if form_db_id == "unknown":
+                form_db_id = "841"
+
+        processed_children = set()
+
+        for obj_ptr, metadata in list(registry._registry.items()):
+            widget_ref = metadata["widget_ref"]
+            control_id = str(metadata["control_id"]).strip()
+            parent_id = metadata["parent_id"]
+            calias = metadata["object_name"]
+
+            if hasattr(widget_ref, 'isVisible') and not widget_ref.isVisible():
                 continue
-            w = item.widget()
-            if not w:
+            if hasattr(widget_ref, 'widget') and hasattr(widget_ref.widget(),
+                                                         'isVisible') and not widget_ref.widget().isVisible():
                 continue
+
+            raw_class = str(getattr(widget_ref, 'control_type', widget_ref.__class__.__name__)).lower()
+
+            is_deleted = False
+            if hasattr(widget_ref, 'scene') and widget_ref.scene() is None:
+                is_deleted = True
+            elif hasattr(widget_ref, 'graphicsProxyWidget'):
+                proxy = widget_ref.graphicsProxyWidget()
+                if not proxy or proxy.scene() is None:
+                    is_deleted = True
+
+            if is_deleted or raw_class in system_garbage_classes or control_id in system_garbage_ids or calias in (
+                    "control_1", "control_840"):
+                continue
+
+            if raw_class in ('qlineedit', 'qpushbutton', 'qlabel') and not parent_id:
+                continue
+
+            cclass = model.get_value(control_id, "control_type")
+            if not cclass:
+                cclass = raw_class
+                if cclass == "qlabel":
+                    cclass = "textbox"
 
             props = {}
-            if hasattr(w, 'properties') and isinstance(w.properties, dict):
-                props.update(w.properties)
+            if hasattr(widget_ref, 'properties') and isinstance(widget_ref.properties, dict):
+                props.update(widget_ref.properties)
 
-            pos = item.pos()
-            props['x'] = int(float(pos.x()) if pos.x() is not None else 50)
-            props['y'] = int(float(pos.y()) if pos.y() is not None else 50)
+            if hasattr(widget_ref, 'rect') and hasattr(widget_ref, 'pos'):
+                pos, rect = widget_ref.pos(), widget_ref.rect()
+                props['x'], props['y'] = int(pos.x()), int(pos.y())
+                props['width'], props['height'] = int(rect.width()), int(rect.height())
+            elif hasattr(widget_ref, 'geometry'):
+                geo = widget_ref.geometry()
+                parent_widget = widget_ref.parentWidget()
+                parent_proxy = parent_widget.graphicsProxyWidget() if parent_widget else None
+                offset_x = int(parent_proxy.pos().x()) if parent_proxy else 0
+                offset_y = int(parent_proxy.pos().y()) if parent_proxy else 0
+                props['x'], props['y'] = geo.x() + offset_x, geo.y() + offset_y
+                props['width'], props['height'] = geo.width(), geo.height()
 
-            rect = item.rect()
-            props['width'] = int(rect.width()) if rect.width() > 0 else 150
-            props['height'] = int(rect.height()) if rect.height() > 0 else 30
+            resolved_parent = str(parent_id) if parent_id else str(form_db_id)
 
             controls_list.append({
-                'id': str(control_id),
-                'calias': w.objectName() if w else f"{item.control_type}_{control_id}",
-                'cclass': item.control_type,
+                'id': control_id,
+                'parentid': resolved_parent,
+                'calias': calias,
+                'cclass': str(cclass).lower(),
                 'properties': props
             })
+            # Шаг 2: Каскадный сбор внутренних частей составного Python-виджета
+            actual_widget = getattr(widget_ref, 'widget', lambda: None)() if hasattr(widget_ref,
+                                                                                     'widget') else widget_ref
+            if actual_widget and hasattr(actual_widget, 'findChildren'):
+                for child in actual_widget.findChildren(QWidget):
+
+                    if not child.isVisible():
+                        continue
+
+                    if id(child) in processed_children:
+                        continue
+
+                    child_name = getattr(child, 'name', child.objectName())
+                    if child_name and child_name in ('txt_of_ref', 'btn_select_of_ref', 'btn_clear_of_ref',
+                                                     'lbl_of_ref'):
+                        processed_children.add(id(child))
+
+                        # ДЕТЕРМИНИРОВАННЫЙ ПОИСК ID: Ищем по живой связке инстанса
+                        child_id = registry.get_id_by_widget(child)
+
+                        # Если связь потеряна, вычисляем ID по эталонной связке имен в DesignerDataModel
+                        if child_id == "unknown":
+                            for k_instances in list(model.properties_instances.keys()):
+                                k_cid = k_instances
+                                if model.get_value(k_cid, "form_alias") == child_name:
+                                    # Проверяем, совпадает ли родитель
+                                    for o_ptr, m_reg in list(registry._registry.items()):
+                                        if str(m_reg["control_id"]).strip() == control_id:
+                                            child_id = k_cid
+                                            registry.register_object(child, parent_container_id=control_id,
+                                                                     explicit_id=child_id)
+                                            break
+
+                        if child_id == "unknown":
+                            child_id = str(uuid.uuid4())[:8]
+                            registry.register_object(child, parent_container_id=control_id, explicit_id=child_id)
+
+                        erp_class = model.get_value(child_id, "control_type")
+                        if not erp_class:
+                            if child_name == 'txt_of_ref':
+                                erp_class = 'textbox'
+                            else:
+                                child_class = child.__class__.__name__
+                                if child_class == 'QPushButton' or 'btn' in child_name:
+                                    erp_class = 'button'
+                                elif child_class == 'QLabel' or 'lbl' in child_name:
+                                    erp_class = 'label'
+                                else:
+                                    erp_class = 'textbox'
+
+                        # ИСПРАВЛЕНО: Сохраняем чистые ЛОКАЛЬНЫЕ координаты подконтрола внутри контейнера,
+                        # полностью защищая геометрию от циклического арифметического сложения!
+                        child_geo = child.geometry()
+                        props_child = {
+                            'x': int(child_geo.x()),
+                            'y': int(child_geo.y()),
+                            'width': int(child_geo.width()),
+                            'height': int(child_geo.height())
+                        }
+                        if hasattr(child, 'properties') and isinstance(child.properties, dict):
+                            props_child.update(child.properties)
+
+                        controls_list.append({
+                            'id': child_id,
+                            'parentid': control_id,
+                            'calias': str(child_name),
+                            'cclass': str(erp_class).lower(),
+                            'properties': props_child
+                        })
+
         return controls_list
-
-    def load_controls(self, controls_data):
-        """Загружает контролы из структуры метаданных."""
-        if not controls_data:
-            return
-
-        from controls import create_control
-
-        for data in controls_data:
-            try:
-                control_id = str(data.get('id', str(uuid.uuid4())[:8]))
-                calias = data.get('calias', f"control_{control_id}")
-                cclass = data.get('cclass', 'textbox')
-                props = data.get('properties', {})
-
-                x = props.pop('x', 50)
-                y = props.pop('y', 50)
-                width = props.pop('width', 150)
-                height = props.pop('height', 30)
-
-                x = int(float(x) if x is not None else 50)
-                y = int(float(y) if y is not None else 50)
-                width = int(float(width) if width is not None else 150)
-                height = int(float(height) if height is not None else 30)
-
-                widget = create_control(cclass, parent=None, db=self.db)
-                if not widget:
-                    continue
-
-                widget.setObjectName(calias)
-                if hasattr(widget, 'properties'):
-                    widget.properties = props
-
-                try:
-                    widget.setFixedSize(width, height)
-                except:
-                    pass
-
-                item = self.add_control(widget, control_id, cclass, x, y)
-                if item:
-                    item.updateGeometry()
-                    if hasattr(item, 'update_handles_position'):
-                        item.update_handles_position()
-
-            except Exception as e:
-                print(f"[ControlsMixin] Ошибка загрузки контрола: {e}")
-
-    def update_control_property(self, control_id, prop_name, value):
-        """Обновляет свойство контрола из инспектора."""
-        if control_id not in self.controls:
-            return
-        item = self.controls[control_id]
-        widget = item.widget()
-        if not widget:
-            return
-
-        try:
-            if hasattr(widget, 'properties') and isinstance(widget.properties, dict):
-                widget.properties[prop_name] = value
-            item.updateGeometry()
-            if hasattr(item, 'update_handles_position'):
-                item.update_handles_position()
-        except Exception as e:
-            print(f"[ControlsMixin] Ошибка обновления свойства: {e}")

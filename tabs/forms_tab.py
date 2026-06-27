@@ -1,381 +1,238 @@
-# /home/sergey/Documents/configurate/tabs/forms_tab.py
 # -*- coding: utf-8 -*-
+# /home/sergey/Documents/configurate/tabs/forms_tab.py
 
 import json
-from PySide6.QtWidgets import (
-    QWidget, QVBoxLayout, QHBoxLayout, QTreeWidget,
-    QTreeWidgetItem, QPushButton, QMessageBox, QDialog
-)
-from PySide6.QtCore import Qt
-
-from database import DatabaseService
-from lang.local_translator import LocalTranslator
-from .forms import FormPropertiesDialog
+from PySide6.QtWidgets import QMessageBox, QDialog
+from .forms_tab_ui import FormsTabUI
+from .forms.form_properties_dialog import FormPropertiesDialog
 from .forms.form_wizard import FormWizard
+from .forms_wizard_factory import FormsWizardFactory
 
 
-class FormsTab(QWidget):
-    """Вкладка управления формами"""
+class FormsTab(FormsTabUI):
+    """Контроллер вкладки: управление жизненным циклом и атомарный UPSERT в PostgreSQL."""
 
     def __init__(self, parent=None, db=None):
-        super().__init__(parent)
-        self.db = db or DatabaseService()
-        self.translator = LocalTranslator()
-
-        layout = QVBoxLayout(self)
-        layout.setContentsMargins(0, 0, 0, 0)
-
-        # Кнопки
-        btn_layout = QHBoxLayout()
-
-        self.btn_add = QPushButton(self.translator.tr('btn_add'))
-        self.btn_add.clicked.connect(self.add_form)
-        btn_layout.addWidget(self.btn_add)
-
-        self.btn_edit = QPushButton(self.translator.tr('btn_edit'))
-        self.btn_edit.clicked.connect(self.edit_form)
-        btn_layout.addWidget(self.btn_edit)
-
-        self.btn_delete = QPushButton(self.translator.tr('btn_delete'))
-        self.btn_delete.clicked.connect(self.delete_form)
-        btn_layout.addWidget(self.btn_delete)
-
-        btn_layout.addStretch()
-        layout.addLayout(btn_layout)
-
-        # Дерево форм
-        self.tree = QTreeWidget()
-        self.tree.setHeaderLabels([
-            self.translator.tr('field_id'),
-            self.translator.tr('field_name'),
-            self.translator.tr('field_alias'),
-            self.translator.tr('field_entity')
-        ])
-        self.tree.setColumnWidth(0, 50)
-        self.tree.setColumnWidth(1, 200)
-        self.tree.setColumnWidth(2, 150)
-        self.tree.itemDoubleClicked.connect(self.edit_form)
-        layout.addWidget(self.tree)
-
-        self.retranslate_ui()
-        self.load_forms()
-
-    def retranslate_ui(self):
-        """Обновление переводов"""
-        self.btn_add.setText(self.translator.tr('btn_add'))
-        self.btn_edit.setText(self.translator.tr('btn_edit'))
-        self.btn_delete.setText(self.translator.tr('btn_delete'))
-        self.tree.setHeaderLabels([
-            self.translator.tr('field_id'),
-            self.translator.tr('field_name'),
-            self.translator.tr('field_alias'),
-            self.translator.tr('field_entity')
-        ])
-
-    def load_forms(self):
-        """Загружает список форм из БД"""
-        sql = """
-            SELECT f.id, f.cname, f.calias, f.ientitytypeid, et.cname as entity_name
-            FROM meta.forms f
-            LEFT JOIN meta.entitytypes et ON f.ientitytypeid = et.id
-            ORDER BY f.cname
-        """
-        rows = self.db.execute_query(sql)
-        self.tree.clear()
-
-        for row in rows:
-            item = QTreeWidgetItem()
-            item.setText(0, str(row[0]))
-            item.setText(1, row[1] or "")
-            item.setText(2, row[2] or "")
-            item.setText(3, row[4] or "")
-            item.setData(0, Qt.UserRole, row[0])
-            self.tree.addTopLevelItem(item)
-
-    def get_selected_id(self):
-        """Возвращает ID выбранной формы"""
-        item = self.tree.currentItem()
-        return item.data(0, Qt.UserRole) if item else None
+        super().__init__(parent, db)
 
     def add_form(self):
-        """Добавление новой формы"""
-        # Спрашиваем, хочет ли пользователь использовать мастер
+        """Добавление новой формы."""
         reply = QMessageBox.question(
-            self,
-            self.translator.tr('question'),
-            self.translator.tr('use_form_wizard'),
+            self, self.translator.tr('question'), self.translator.tr('use_form_wizard'),
             QMessageBox.Yes | QMessageBox.No | QMessageBox.Cancel
         )
-
         if reply == QMessageBox.Cancel:
             return
         elif reply == QMessageBox.Yes:
-            # Открываем мастер
             wizard = FormWizard(self.db, parent=self)
-            if wizard.exec_() == QDialog.Accepted:
-                result = wizard.get_result()
-                self._create_form_from_wizard(result)
+            if wizard.exec() == QDialog.Accepted:
+                self._create_form_from_wizard(wizard.get_result())
         else:
-            # Старый способ — пустая форма
             dlg = FormPropertiesDialog(None, db=self.db)
-            if dlg.exec_() == QDialog.Accepted:
-                data = dlg.get_data()
-                self._save_form(data)
+            if dlg.exec() == QDialog.Accepted:
+                self._save_form(dlg.get_data())
 
     def edit_form(self):
-        """Редактирование формы"""
+        """Редактирование формы."""
         form_id = self.get_selected_id()
         if not form_id:
-            QMessageBox.warning(
-                self,
-                self.translator.tr('warning'),
-                self.translator.tr('warning_select_form')
-            )
+            QMessageBox.warning(self, self.translator.tr('warning'), self.translator.tr('warning_select_form'))
             return
 
-        sql = """
-            SELECT cname, calias, ientitytypeid, mstate_json 
-            FROM meta.forms WHERE id = %s
-        """
+        sql = "SELECT cname, calias, ientitytypeid, mstate_json FROM meta.forms WHERE id = %s"
         row = self.db.execute_query(sql, (form_id,))
-        if not row:
+        if not row or not isinstance(row, list) or len(row) == 0:
             return
+
+        # ИСПРАВЛЕНО: Извлекаем атомарные поля из первой записи (row[0]) массива СУБД PostgreSQL
+        db_record = row[0] if isinstance(row[0], (list, tuple)) else row
+
+        # Защищаем типы данных от прорыва сырых массивов
+        cname_val = db_record[0] if len(db_record) > 0 else ""
+        calias_val = db_record[1] if len(db_record) > 1 else ""
+        entity_val = db_record[2] if len(db_record) > 2 else None
+        mstate_val = db_record[3] if len(db_record) > 3 else "{}"
 
         data = {
-            "cname": row[0][0],
-            "calias": row[0][1],
-            "ientitytypeid": row[0][2],
-            "mstate_json": row[0][3]
+            "cname": str(cname_val).strip(),
+            "calias": str(calias_val).strip(),
+            "ientitytypeid": entity_val,
+            "mstate_json": mstate_val
         }
 
-        # parent=None для независимости от DBWorkDialog
+        # Чтение геометрии бланка из mstate_json для корректного масштабирования при старте
+        if mstate_val:
+            try:
+                if isinstance(mstate_val, str):
+                    m_dict = json.loads(mstate_val)
+                else:
+                    m_dict = mstate_val
+                geom = m_dict.get("geometry", {})
+                if geom:
+                    data["width"] = geom.get("width", 942)
+                    data["height"] = geom.get("height", 928)
+            except:
+                pass
+
         dlg = FormPropertiesDialog(None, data, db=self.db, form_id=form_id)
-        if dlg.exec_() == QDialog.Accepted:
-            new_data = dlg.get_data()
-            self._save_form(new_data, form_id)
+        if dlg.exec() == QDialog.Accepted:
+            self._save_form(dlg.get_data(), form_id)
 
     def delete_form(self):
-        """Удаление формы"""
+        """Удаление формы."""
         form_id = self.get_selected_id()
         if not form_id:
             return
-
-        # Проверяем, есть ли элементы у формы
-        res = self.db.execute_query(
-            "SELECT COUNT(*) FROM meta.form_elements WHERE formid = %s",
-            (form_id,)
-        )
-        count = res[0][0] if res else 0
-
+        res = self.db.execute_query("SELECT COUNT(*) FROM meta.form_elements WHERE formid = %s", (form_id,))
+        count = res if res and isinstance(res, list) and len(res) > 0 else 0
         msg = self.translator.tr('confirm_delete_form')
         if count > 0:
             msg += f"\n\n{self.translator.tr('warning_form_has_elements')}: {count}"
-
-        reply = QMessageBox.question(
-            self,
-            self.translator.tr('confirm_delete'),
-            msg,
-            QMessageBox.Yes | QMessageBox.No
-        )
-
-        if reply == QMessageBox.Yes:
-            self.db.execute_query(
-                "DELETE FROM meta.form_elements WHERE formid = %s",
-                (form_id,),
-                fetch=False
-            )
-            self.db.execute_query(
-                "DELETE FROM meta.forms WHERE id = %s",
-                (form_id,),
-                fetch=False
-            )
+        if QMessageBox.question(self, self.translator.tr('confirm_delete'), msg,
+                                QMessageBox.Yes | QMessageBox.No) == QMessageBox.Yes:
+            self.db.execute_query("DELETE FROM meta.form_elements WHERE formid = %s", (form_id,), fetch=False)
+            self.db.execute_query("DELETE FROM meta.forms WHERE id = %s", (form_id,), fetch=False)
             self.load_forms()
 
     def _save_form(self, data, form_id=None):
-        """Сохраняет форму в БД"""
+        """Сохраняет форму и её элементы в БД за один атомарный шаг с выводом сырого дампа."""
         mstate = data.get("mstate_json")
         if isinstance(mstate, dict):
             mstate = json.dumps(mstate, ensure_ascii=False)
 
-        if form_id:
-            sql = """
-                UPDATE meta.forms 
-                SET cname=%s, calias=%s, ientitytypeid=%s, mstate_json=%s
-                WHERE id=%s
-            """
-            self.db.execute_query(sql, (
-                data["cname"], data["calias"],
-                data["ientitytypeid"], mstate, form_id
-            ), fetch=False)
-        else:
-            sql = """
-                INSERT INTO meta.forms (cname, calias, ientitytypeid, mstate_json)
-                VALUES (%s, %s, %s, %s) RETURNING id
-            """
-            res = self.db.execute_query(sql, (
-                data["cname"], data["calias"], data["ientitytypeid"], mstate
-            ))
-            if res:
-                form_id = res[0][0]
+        # Вывод очищенного дампа в консоль
+        print("\n" + "=" * 80)
+        print(f"📡 --- ДАМП СОХРАНЕНИЯ ERP-ФОРМЫ (ID в БД: {form_id}) ---")
+        print(f"Имя формы (cname):  {data.get('cname')}")
+        print(f"Алиас формы (calias): {data.get('calias')}")
+        print(f"Сущность (entity id): {data.get('ientitytypeid')}")
+        print("-" * 80)
+        print("Сырой JSON-паспорт (mstate_json), отправляемый в meta.forms:")
+        print(mstate)
+        print("-" * 80)
+        print(f"Количество контролов для meta.form_elements: {len(data.get('controls', []))}")
+        for idx, ctrl in enumerate(data.get('controls', [])):
+            print(
+                f"  [{idx}] ID: {ctrl.get('id')}, ParentID: {ctrl.get('parentid')}, Alias: {ctrl.get('calias')}, Class: {ctrl.get('cclass')}, Geo: {ctrl.get('properties', {})}")
+        print(f"Переданные ID на каскадное удаление (deleted_ids): {data.get('deleted_ids', [])}")
+        print("=" * 80 + "\n")
 
+        if form_id:
+            sql = "UPDATE meta.forms SET cname=%s, calias=%s, ientitytypeid=%s, mstate_json=%s WHERE id=%s"
+            self.db.execute_query(sql, (data["cname"], data["calias"], data["ientitytypeid"], mstate, form_id),
+                                  fetch=False)
+        else:
+            sql = "INSERT INTO meta.forms (cname, calias, ientitytypeid, mstate_json) VALUES (%s, %s, %s, %s) RETURNING id"
+            res = self.db.execute_query(sql, (data["cname"], data["calias"], data["ientitytypeid"], mstate))
+            if res and isinstance(res, list) and len(res) > 0:
+                form_id = res
+        if form_id and "controls" in data:
+            self._save_controls_upsert(form_id, data["controls"], data.get("deleted_ids", []))
         self.load_forms()
         return form_id
 
-    def _create_form_from_wizard(self, result):
-        """Создаёт форму по результатам мастера"""
-        # Генерируем JSON формы на основе выбранных полей
-        form_json = self._generate_form_json(result)
-
-        form_id = self._save_form({
-            'cname': result['form_name'],
-            'calias': result['form_alias'],
-            'ientitytypeid': result['entity_id'],
-            'mstate_json': form_json
-        })
-
-        if form_id:
-            QMessageBox.information(
-                self,
-                self.translator.tr('info'),
-                self.translator.tr('form_created_success')
+    def _save_controls_upsert(self, form_id, controls, deleted_ids=None):
+        """Сохраняет все элементы, каскадно вычищая удаленные ветки через хранимую процедуру."""
+        if deleted_ids and isinstance(deleted_ids, list):
+            self.db.execute_query(
+                "SELECT meta.delete_form_elements_tree(%s, %s::int[]);",
+                (int(form_id), deleted_ids),
+                fetch=False
             )
 
-    def _generate_form_json(self, result):
-        """Генерирует JSON формы на основе выбранных полей"""
-        if result['is_grid']:
-            return self._generate_grid_form_json(result)
+        active_ids, form_element_node = [], None
+        system_garbage_classes = ('formbackground', 'resizehandle', 'formbackgroundsignals', 'qlineedit', 'qpushbutton')
+
+        for ctrl in controls:
+            cclass_str = str(ctrl.get("cclass", "")).lower()
+            cid = str(ctrl.get("id", "")).strip()
+
+            if cclass_str in system_garbage_classes or cid in ('1', '840') or ctrl.get("calias") == "control_840":
+                continue
+
+            if ctrl.get("cclass") == "form":
+                form_element_node = ctrl
+                continue
+            if cid.isdigit() and int(cid) > 0:
+                active_ids.append(int(cid))
+
+        existing_form_el = self.db.execute_query(
+            "SELECT id FROM meta.form_elements WHERE formid = %s AND cclass = 'form' LIMIT 1",
+            (form_id,)
+        )
+        if existing_form_el and isinstance(existing_form_el, list) and len(existing_form_el) > 0:
+            allocated_form_el_id = int(existing_form_el[0][0])
+            active_ids.append(allocated_form_el_id)
+            if form_element_node:
+                form_element_node["id"] = str(allocated_form_el_id)
         else:
-            return self._generate_edit_form_json(result)
+            allocated_form_el_id = None
 
-    def _generate_grid_form_json(self, result):
-        """Генерирует JSON для табличной формы"""
-        columns = []
-        for field in result['selected_fields']:
-            # Получаем информацию о поле
-            field_info = self.db.execute_query(
-                """
-                SELECT calias, cfieldtype 
-                FROM meta.fields 
-                WHERE cfieldname = %s AND entitytypeid = %s
-                """,
-                (field, result['entity_id'])
+        if active_ids:
+            placeholders = ",".join(["%s"] * len(active_ids))
+            self.db.execute_query(
+                f"DELETE FROM meta.form_elements WHERE formid = %s AND id NOT IN ({placeholders})",
+                tuple([form_id] + active_ids), fetch=False
             )
-            if field_info:
-                columns.append({
-                    "field": field,
-                    "header": field_info[0][0],
-                    "width": 150
-                })
+        else:
+            self.db.execute_query("DELETE FROM meta.form_elements WHERE formid = %s", (form_id,), fetch=False)
 
-        return {
-            "class": "MozartForm",
-            "objectName": result['form_alias'],
-            "windowTitle": result['form_name'],
-            "geometry": {"x": 0, "y": 0, "width": 1000, "height": 600},
-            "widgets": [
-                {
-                    "class": "MozartGrid",
-                    "name": "grid_main",
-                    "geometry": {"x": 10, "y": 10, "width": 980, "height": 500},
-                    "properties": {
-                        "columns_json": json.dumps(columns),
-                        "allow_filter": True,
-                        "allow_sort": True
-                    }
-                }
-            ],
-            "toolbar": [
-                {"text": self.translator.tr('btn_add'), "action": "add", "icon": "add"},
-                {"text": self.translator.tr('btn_edit'), "action": "edit", "icon": "edit"},
-                {"text": self.translator.tr('btn_delete'), "action": "delete", "icon": "delete"}
-            ],
-            "custom_properties": {
-                "entity_alias": result.get('entity_alias', ''),
-                "form_type": "grid"
-            }
-        }
+        sql_upsert = """INSERT INTO meta.form_elements (id, formid, calias, cclass, mproperties_json, parentid, isortorder, lisactive)
+                        VALUES (%s, %s, %s, %s, %s, %s, %s, true) ON CONFLICT (id) DO UPDATE 
+                        SET calias=EXCLUDED.calias, cclass=EXCLUDED.cclass, mproperties_json=EXCLUDED.mproperties_json, parentid=EXCLUDED.parentid, isortorder=EXCLUDED.isortorder, lisactive=true;"""
+        sql_insert = "INSERT INTO meta.form_elements (formid, calias, cclass, mproperties_json, parentid, isortorder, lisactive) VALUES (%s, %s, %s, %s, %s, %s, true) RETURNING id;"
 
-    def _generate_edit_form_json(self, result):
-        """Генерирует JSON для формы редактирования"""
-        controls = []
-        y = 10
+        if form_element_node:
+            properties = form_element_node.get('properties', {})
+            if allocated_form_el_id:
+                self.db.execute_query(sql_upsert, (allocated_form_el_id, form_id,
+                                                   form_element_node.get('calias', 'OrdinaryDictionary'), 'form',
+                                                   json.dumps(properties, ensure_ascii=False), None, 0), fetch=False)
+            else:
+                res = self.db.execute_query(sql_insert,
+                                            (form_id, form_element_node.get('calias', 'OrdinaryDictionary'), 'form',
+                                             json.dumps(properties, ensure_ascii=False), None, 0))
+                if res and isinstance(res, list) and len(res) > 0:
+                    form_element_node['id'] = str(res[0][0])
 
-        # Получаем класс контрола по типу поля
-        def get_control_type(field_type):
-            type_map = {
-                'C': 'TextBox',
-                'I': 'NumberBox',
-                'N': 'NumberBox',
-                'D': 'DateBox',
-                'T': 'DateBox',
-                'L': 'CheckBox',
-                'M': 'Memo',
-                'R': 'Reference'
-            }
-            return type_map.get(field_type, 'TextBox')
+        for idx, control in enumerate(controls):
+            cclass_str = str(control.get('cclass', '')).lower()
+            cid_str = str(control.get('id', '')).strip()
 
-        for field in result['selected_fields']:
-            field_info = self.db.execute_query(
-                """
-                SELECT calias, cfieldtype 
-                FROM meta.fields 
-                WHERE cfieldname = %s AND entitytypeid = %s
-                """,
-                (field, result['entity_id'])
-            )
-            if field_info:
-                calias = field_info[0][0]
-                field_type = field_info[0][1]
-                control_type = get_control_type(field_type)
+            if cclass_str == 'form' or cclass_str in system_garbage_classes or cid_str in ('1', '840'):
+                continue
 
-                control = {
-                    "class": f"Mozart{control_type}",
-                    "name": field,
-                    "geometry": {"x": 10, "y": y, "width": 300, "height": 30},
-                    "properties": {
-                        "label": calias,
-                        "binding_field": field
-                    }
-                }
+            properties = control.get('properties', {})
+            raw_pid = control.get("parentid")
 
-                # Для ссылочных полей добавляем entity_alias
-                if field_type == 'R':
-                    # Получаем целевую сущность для ссылки
-                    ref_res = self.db.execute_query(
-                        """
-                        SELECT ref_entitytypeid 
-                        FROM meta.fields 
-                        WHERE cfieldname = %s AND entitytypeid = %s
-                        """,
-                        (field, result['entity_id'])
-                    )
-                    if ref_res and ref_res[0][0]:
-                        ref_entity = self.db.execute_query(
-                            "SELECT calias FROM meta.entitytypes WHERE id = %s",
-                            (ref_res[0][0],)
-                        )
-                        if ref_entity:
-                            control["properties"]["entity_alias"] = ref_entity[0][0]
-                            control["properties"]["display_field"] = "cname"
+            # Если родитель — системная строка 'form_root', в базу пишем NULL,
+            # так как физическим родителем в схеме таблиц является сама строка 'form'
+            if raw_pid == "form_root" and form_element_node:
+                db_pid = int(form_element_node.get('id')) if str(form_element_node.get('id')).isdigit() else None
+            else:
+                db_pid = int(raw_pid) if (raw_pid and str(raw_pid).isdigit()) else None
 
-                controls.append(control)
-                y += 40
+            if cid_str.isdigit() and int(cid_str) > 0:
+                self.db.execute_query(sql_upsert, (int(cid_str), form_id, control.get('calias', ''),
+                                                   control.get('cclass', 'textbox'),
+                                                   json.dumps(properties, ensure_ascii=False), db_pid, (idx + 1) * 10),
+                                      fetch=False)
+            else:
+                res = self.db.execute_query(sql_insert,
+                                            (form_id, control.get('calias', ''), control.get('cclass', 'textbox'),
+                                             json.dumps(properties, ensure_ascii=False), db_pid, (idx + 1) * 10))
+                if res and isinstance(res, list) and len(res) > 0:
+                    control['id'] = str(res[0][0])
 
-        # Вычисляем высоту формы
-        height = min(800, y + 100)
-
-        return {
-            "class": "MozartForm",
-            "objectName": result['form_alias'],
-            "windowTitle": result['form_name'],
-            "geometry": {"x": 0, "y": 0, "width": 600, "height": height},
-            "widgets": controls,
-            "toolbar": [
-                {"text": self.translator.tr('btn_save'), "action": "save", "icon": "save"},
-                {"text": self.translator.tr('btn_cancel'), "action": "cancel", "icon": "cancel"}
-            ],
-            "custom_properties": {
-                "entity_alias": result.get('entity_alias', ''),
-                "form_type": "edit"
-            }
-        }
+    def _create_form_from_wizard(self, result):
+        """Создаёт форму по результатам мастера, задействуя внешнюю фабрику."""
+        form_json = FormsWizardFactory.generate_grid_json(result, self.db) if result.get('is_grid',
+                                                                                         False) else FormsWizardFactory.generate_edit_json(
+            result, self.db)
+        self._save_form({
+            'cname': result.get('cname', 'Новая форма от Мастера'),
+            'calias': result.get('calias', 'wizard_form_alias'),
+            'ientitytypeid': result.get('ientitytypeid'),
+            'mstate_json': form_json.get('mstate_json', {}),
+            'controls': form_json.get('controls', [])
+        })

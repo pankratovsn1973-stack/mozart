@@ -1,179 +1,166 @@
-# widgets/form_designer_old/control_item.py
 # -*- coding: utf-8 -*-
+# /home/sergey/Documents/configurate/widgets/form_designer_old/control_item.py
 
-from PySide6.QtWidgets import QGraphicsProxyWidget, QGraphicsItem, QWidget, QApplication
-from PySide6.QtCore import Qt, QPointF, QRectF, Signal, QEvent
-from PySide6.QtWidgets import QGraphicsSceneMouseEvent
-from .resize_handle import ResizeHandle
+from PySide6.QtCore import Qt, Signal, QPointF
+from PySide6.QtWidgets import QGraphicsSceneMouseEvent, QWidget
+from .control_item_movement import ControlItemMovement
+from .focus_registry import FocusRegistry
 
 
-class ControlItem(QGraphicsProxyWidget):
-    """Прокси-виджет для управления контролами на холсте визуального дизайнера."""
-
+class ControlItem(ControlItemMovement):
+    """Главный управляющий класс графического прокси-контейнера на сцене визуального дизайнера."""
     selected_changed = Signal(bool)
     geometry_changed = Signal(str, int, int, int, int)
 
     def __init__(self, widget, control_id, control_type, parent=None):
-        super().__init__(parent)
-        self.setWidget(widget)
+        self.control_id = str(control_id).strip()
+        self._selected_child_widgets = []
+        self._active_child_item = None
+        super().__init__(widget, control_id, control_type, parent)
 
-        self.control_id = str(control_id)
-        self.control_type = control_type
+    def clear_internal_selection(self):
+        """Сброс и скрытие маркеров изменения размеров."""
+        if hasattr(self, '_selected_child_widgets') and self._selected_child_widgets:
+            for handle in self._selected_child_widgets:
+                if hasattr(handle, 'setVisible'):
+                    handle.setVisible(False)
+            self._selected_child_widgets.clear()
+        self.update()
 
-        # Включаем стандартные флаги выделения и трекинга геометрии
-        self.setFlag(QGraphicsItem.GraphicsItemFlag.ItemIsSelectable, True)
-        self.setFlag(QGraphicsItem.GraphicsItemFlag.ItemSendsGeometryChanges, True)
-        self.setAcceptHoverEvents(True)
+    def handle_internal_click(self, event):
+        """Активация контекста внутренней части составного референса при каскадном клике."""
+        if not self.scene():
+            return
 
-        # Полностью блокируем проваливание событий мыши во внутренние виджеты в режиме дизайна
-        self.setFiltersChildEvents(True)
+        source_widget = self.widget()
+        if not source_widget:
+            return
 
-        # Переменные для ручного расчета перемещения
-        self._is_dragging = False
-        self._drag_start_pos = QPointF()
+        child = source_widget.childAt(event.pos().toPoint())
+        if not child and event.widget():
+            child = event.widget()
 
-        # Автоматически инициализируем маркер ресайза, дочерний для этого контрола
-        self.resize_handle = ResizeHandle(4, self, parent=self)
-        self._handles = [self.resize_handle]
-        self.resize_handle.setVisible(False)
-        self.update_handles_position()
+        if child and child != source_widget:
+            child_name = getattr(child, 'name', child.objectName())
+            if child_name in ('txt_of_ref', 'btn_select_of_ref', 'btn_clear_of_ref', 'lbl_of_ref'):
+                self.scene()._active_context_container = self
+                self._active_child_item = child
 
-    def setWidgetSize(self, width, height):
-        widget = self.widget()
-        if widget:
-            try:
-                widget.setFixedSize(int(width), int(height))
-                self.updateGeometry()
+                if hasattr(self.scene(), 'select_control'):
+                    self.scene().select_control(self)
+
                 self.update_handles_position()
-                self._forward_geometry_signal()
-            except Exception as e:
-                print(f"[ControlItem] Ошибка ресайза виджета: {e}")
+                self.update()
 
     def update_handles_position(self):
-        if hasattr(self, '_handles'):
-            for handle in self._handles:
-                if handle and hasattr(handle, 'update_position'):
-                    handle.update_position()
+        """Синхронизация положения маркера юго-восточного ресайза за правым нижним углом рамки."""
+        # ДОБАВЛЕН ПРИНТ ДЛЯ ПРОВЕРКИ СТАРТА ОПРЕДЕЛЕНИЯ МАРКЕРОВ
+        print(
+            f"[HANDLE_LOG] Шаг 1: Запуск update_handles_position() для ID: {self.control_id} | Выбран: {self.isSelected()}")
+
+        if not self.isSelected():
+            return
+
+        if not hasattr(self, '_selected_child_widgets') or self._selected_child_widgets is None:
+            self._selected_child_widgets = []
+
+        rect = self.rect()
+
+        # Если маркер еще не создан на сцене — генерируем его напрямую в основном классе
+        if not self._selected_child_widgets and self.scene():
+            try:
+                from .resize_handle import ResizeHandle
+                print(f"[HANDLE_LOG] Шаг 2: Попытка инстанцировать ResizeHandle для родителя {self.control_id}")
+                handle = ResizeHandle(self)
+                self.scene().addItem(handle)
+                self._selected_child_widgets.append(handle)
+                print("[HANDLE_LOG] Шаг 3: Маркер ResizeHandle успешно добавлен на сцену")
+            except Exception as e:
+                print(f"[HANDLE_LOG] КРИТИЧЕСКАЯ ОШИБКА создания ResizeHandle: {e}")
+
+        # Выравниваем маркер строго по юго-восточному углу (правый нижний край)
+        for handle in self._selected_child_widgets:
+            try:
+                handle.setPos(rect.width(), rect.height())
+                handle.setVisible(True)
+                if hasattr(handle, 'update'):
+                    handle.update()
+                print(f"[HANDLE_LOG] Шаг 4: Позиция маркера выставлена на {rect.width()}x{rect.height()}")
+            except Exception as e:
+                print(f"[HANDLE_LOG] ОШИБКА позиционирования хэндла: {e}")
+
+    def paint(self, painter, option, widget):
+        """Переопределение отрисовки: жесткое наложение FoxPro-style синей рамки выделения."""
+        super().paint(painter, option, widget)
+
+        if self.isSelected():
+            from PySide6.QtGui import QPen, QColor
+            painter.save()
+            pen = QPen(QColor(0, 120, 215), 1.5, Qt.PenStyle.DashLine)
+            painter.setPen(pen)
+            painter.setBrush(Qt.BrushStyle.NoBrush)
+            rect = self.rect()
+            painter.drawRect(rect)
+            painter.restore()
 
     def mousePressEvent(self, event: QGraphicsSceneMouseEvent):
-        """Обработка захвата контрола мышью."""
+        """Перехват клика мыши: разделение верхнего уровня, каскадного фокуса и свободного драга."""
+        if event.button() == Qt.MouseButton.RightButton:
+            super().mousePressEvent(event)
+            return
+
         if event.button() == Qt.MouseButton.LeftButton:
-            self._is_dragging = True
 
-            # Запоминаем стартовую позицию клика относительно левого верхнего угла самого контрола
-            self._drag_start_pos = event.pos()
+            # УРОВЕНЬ 1: Составной контрол еще не выбран — берем его монолитно и готовим к движению
+            if not self.isSelected():
+                self._is_dragging = True
+                self._drag_start_pos = event.scenePos()
 
-            # Управляем групповым или одиночным выделением
-            if event.modifiers() & Qt.KeyboardModifier.ControlModifier:
-                self.setSelected(not self.isSelected())
-            else:
-                if not self.isSelected():
+                if not (event.modifiers() & Qt.KeyboardModifier.ControlModifier):
                     if self.scene():
                         self.scene().clearSelection()
-                    self.setSelected(True)
+                        FocusRegistry().reset_active_context()
 
-            # Фокусируем инспектор свойств
-            if self.scene() and hasattr(self.scene(), 'select_control'):
-                self.scene().select_control(self)
+                self.setSelected(True)
+
+                self.clear_internal_selection()
+                self.selected_changed.emit(True)
+
+                if self.scene() and hasattr(self.scene(), 'select_control'):
+                    self.scene().select_control(self)
+
+                self.update_handles_position()
+                self.update()
+
+                event.accept()
+                return
+
+            # УРОВЕНЬ 2: Контрол УЖЕ выбран — проверяем каскадный фокус на под-элементы
+            source_widget = self.widget()
+            if source_widget:
+                child = source_widget.childAt(event.pos().toPoint())
+                if not child and event.widget():
+                    child = event.widget()
+
+                if child and child != source_widget:
+                    child_name = getattr(child, 'name', child.objectName())
+                    if child_name in ('txt_of_ref', 'btn_select_of_ref', 'btn_clear_of_ref', 'lbl_of_ref'):
+                        if self.scene() and getattr(self.scene(), '_active_context_container', None) == self:
+                            self.handle_internal_click(event)
+                            super().mousePressEvent(event)
+                            return
+
+            # УРОВЕНЬ 3: Клик по пустому месту — сброс внутренностей на внешнюю рамку
+            self.clear_internal_selection()
+            FocusRegistry().reset_active_context()
+
+            self._is_dragging = True
+            self._drag_start_pos = event.scenePos()
+
+            self.update_handles_position()
+            self.update()
 
             event.accept()
             return
 
         super().mousePressEvent(event)
-
-    def mouseMoveEvent(self, event: QGraphicsSceneMouseEvent):
-        """Плавное перемещение текущего контрола (или всей группы выделенных элементов) мышью."""
-        if self._is_dragging and event.buttons() & Qt.MouseButton.LeftButton:
-
-            # Если выделено несколько элементов, перемещаем их синхронно через сцену
-            if self.scene():
-                selected_items = [item for item in self.scene().selectedItems() if isinstance(item, ControlItem)]
-
-                # Если выделена группа, рассчитываем общую дельту смещения по первому элементу
-                if len(selected_items) > 1:
-                    new_pos_scene = event.scenePos() - self._drag_start_pos
-                    delta = new_pos_scene - self.pos()
-
-                    for item in selected_items:
-                        item._move_with_constraints(item.pos() + delta)
-                    event.accept()
-                    return
-
-            # Одиночное перемещение
-            new_pos = event.scenePos() - self._drag_start_pos
-            self._move_with_constraints(new_pos)
-            event.accept()
-            return
-
-        super().mouseMoveEvent(event)
-
-    def mouseReleaseEvent(self, event: QGraphicsSceneMouseEvent):
-        """Отпускание мыши и привязка к сетке."""
-        if event.button() == Qt.MouseButton.LeftButton:
-            self._is_dragging = False
-
-            # Применяем привязку к сетке по окончании движения
-            if self.scene() and hasattr(self.scene(), 'snap_to_grid'):
-                snapped_pos = self.scene().snap_to_grid(self.pos())
-                self._move_with_constraints(snapped_pos)
-
-            event.accept()
-            return
-
-        super().mouseReleaseEvent(event)
-
-    def _move_with_constraints(self, target_pos: QPointF):
-        """Вспомогательный метод перемещения с жестким удержанием внутри границ бланка."""
-        if self.parentItem() and hasattr(self.parentItem(), 'rect'):
-            p_rect = self.parentItem().rect()
-            my_rect = self.rect()
-
-            min_y = 32.0  # Высота заголовка формы бланка
-            max_y = max(min_y, p_rect.height() - my_rect.height() - 24.0)
-            max_x = max(0.0, p_rect.width() - my_rect.width())
-
-            x = max(0.0, min(target_pos.x(), max_x))
-            y = max(min_y, min(target_pos.y(), max_y))
-            target_pos = QPointF(x, y)
-
-        self.setPos(target_pos)
-        self.update_handles_position()
-        self._forward_geometry_signal()
-
-    def _forward_geometry_signal(self):
-        rect = self.rect()
-        pos = self.pos()
-        self.geometry_changed.emit(
-            self.control_id, int(pos.x()), int(pos.y()), int(rect.width()), int(rect.height())
-        )
-        if self.scene() and hasattr(self.scene(), 'geometry_changed'):
-            self.scene().geometry_changed.emit(
-                self.control_id, int(pos.x()), int(pos.y()), int(rect.width()), int(rect.height())
-            )
-
-        # МОНОЛИТНАЯ ПРОШИВКА СИНХРОНИЗАЦИИ: Напрямую находим панель свойств через иерархию окон приложения
-        for widget in QApplication.allWidgets():
-            if widget.__class__.__name__ == "FormDesigner":
-                if hasattr(widget, 'property_panel') and hasattr(widget.property_panel, 'update_geometry_values'):
-                    widget.property_panel.update_geometry_values(pos.x(), pos.y(), rect.width(), rect.height())
-                    break
-
-    def set_selected(self, selected: bool):
-        self.setSelected(selected)
-
-    def itemChange(self, change, value):
-        if change == QGraphicsItem.GraphicsItemChange.ItemSelectedChange:
-            is_selected = bool(value)
-            self.selected_changed.emit(is_selected)
-
-            if hasattr(self, '_handles'):
-                for handle in self._handles:
-                    handle.setVisible(is_selected)
-                    if is_selected:
-                        handle.update_position()
-
-        elif change == QGraphicsItem.GraphicsItemChange.ItemPositionHasChanged:
-            self.update_handles_position()
-            self._forward_geometry_signal()
-
-        return super().itemChange(change, value)

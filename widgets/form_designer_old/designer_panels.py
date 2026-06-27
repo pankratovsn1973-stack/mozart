@@ -1,9 +1,8 @@
 # -*- coding: utf-8 -*-
 # /home/sergey/Documents/configurate/widgets/form_designer_old/designer_panels.py
 
-from PySide6.QtWidgets import QSplitter
-from PySide6.QtCore import QSize
-from PySide6.QtGui import QAction
+from PySide6.QtWidgets import QSplitter, QSizePolicy
+from PySide6.QtCore import Qt
 
 from .palette_widget import PaletteWidget
 from .hierarchy_widget import HierarchyWidget
@@ -11,14 +10,14 @@ from .property_editor import PropertyEditor
 
 
 class DesignerPanels:
-    """Управление боковыми панелями дизайнера."""
+    """Управление боковыми панелями дизайнера с корректными импортами PySide6."""
 
     def __init__(self, parent, db):
         self.parent = parent
         self.db = db
 
         # Левый сплиттер (палитра + иерархия)
-        self.left_splitter = QSplitter(Qt.Vertical)
+        self.left_splitter = QSplitter(Qt.Orientation.Vertical)
         self.palette = PaletteWidget(parent)
         self.hierarchy = HierarchyWidget(parent)
         self.left_splitter.addWidget(self.palette)
@@ -28,7 +27,7 @@ class DesignerPanels:
         # Правый сплиттер (свойства)
         self.right_panel = PropertyEditor(parent)
         self.right_panel.setMinimumWidth(10)
-        self.right_panel.setSizePolicy(QSizePolicy.Ignored, QSizePolicy.Expanding)
+        self.right_panel.setSizePolicy(QSizePolicy.Policy.Ignored, QSizePolicy.Policy.Expanding)
 
         # Подключение сигналов
         self.hierarchy.item_selected.connect(self._on_hierarchy_selected)
@@ -53,7 +52,6 @@ class DesignerPanels:
 
     def retranslate(self, tr):
         self.hierarchy.retranslate_ui()
-        # PropertyEditor переводится отдельно
 
     def update_for_control(self, control_item):
         if control_item:

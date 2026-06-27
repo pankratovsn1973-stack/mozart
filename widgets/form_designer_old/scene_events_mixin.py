@@ -1,74 +1,88 @@
-# widgets/form_designer_old/scene_events_mixin.py
 # -*- coding: utf-8 -*-
+# /home/sergey/Documents/configurate/widgets/form_designer_old/scene_events_mixin.py
 
 from PySide6.QtCore import Qt, QPointF
 from PySide6.QtWidgets import QGraphicsSceneMouseEvent
-from .control_item import ControlItem
-from .resize_handle import ResizeHandle
+from PySide6.QtGui import QKeyEvent
+from .control_item_base import ControlItemBase
+from .focus_registry import FocusRegistry
 
 
 class EventsMixin:
-    """
-    Миксин обработки системных событий мыши графической сцены дизайнера.
-    Обеспечивает обязательный сквозной проброс сигналов для оживления контролов и рамок.
-    """
+    """Миксин сцены, управляющий контекстным фокусом по изменению коллекции выделения."""
+
+    def _init_context_metadata(self):
+        self._active_context_container = None
+        self.selectionChanged.connect(self._on_global_selection_changed)
+
+    def _on_global_selection_changed(self):
+        """Программный перехват опустевшей коллекции выделения."""
+        selected_items = [i for i in self.selectedItems() if isinstance(i, ControlItemBase)]
+
+        # Если коллекция стала абсолютно пустой (пользователь кликнул на сетку)
+        if len(selected_items) == 0:
+            self._active_context_container = None
+            FocusRegistry().reset_active_context()
+            self.setFocusItem(None)
+
+            if hasattr(self, 'control_selected'):
+                self.control_selected.emit(None)
 
     def mousePressEvent(self, event: QGraphicsSceneMouseEvent):
-        """
-        Обработка нажатия кнопки мыши на холсте дизайнера.
-        Управляет одиночным/множественным выделением контролов и сбросом фокуса на форму.
-        """
         if event.button() == Qt.MouseButton.LeftButton:
             view_list = self.views()
-            view_transform = view_list[0].transform() if view_list else None
+            if view_list and view_list.__getitem__(0):
+                view_list.__getitem__(0).setFocus()
 
-            # Ищем графический элемент под курсором в момент клика
-            item = self.itemAt(event.scenePos(), view_transform)
+            view_transform = view_list.transform() if view_list else None
+            item = self.itemAt(event.scenePos(), view_transform or "")
 
-            # Если кликнули на пустое место, на саму форму или её элементы (заголовок/статусбар)
-            if item is None or item == self.background or item == getattr(self.background, 'title_bar',
-                                                                          None) or item == getattr(self.background,
-                                                                                                   'status_bar', None):
-                # Снимаем выделение со всех выбранных контролов холста
-                self.clearSelection()
-                # Переключаем инспектор свойств PropertyEditor обратно на параметры формы
-                if hasattr(self, 'select_control'):
-                    self.select_control(None)
+            target_control = None
+            if isinstance(item, ControlItemBase):
+                target_control = item
+            elif item and item.parentItem() and isinstance(item.parentItem(), ControlItemBase):
+                target_control = item.parentItem()
 
-                # Пробрасываем клик дальше, чтобы TitleBarStub мог начать drag формы
-                super().mousePressEvent(event)
-                return
+            if target_control:
+                self.setFocusItem(target_control)
 
-            # Клик пришелся по контролу (ControlItem)
-            # Если зажат Ctrl — инвертируем статус выделения этого элемента, не трогая остальные
-            if event.modifiers() & Qt.KeyboardModifier.ControlModifier:
-                if isinstance(item, ControlItem):
-                    item.setSelected(not item.isSelected())
-                elif item.parentItem() and isinstance(item.parentItem(), ControlItem):
-                    item.parentItem().setSelected(not item.parentItem().isSelected())
-            else:
-                # Обычный клик: если элемент еще не выделен, сбрасываем старое выделение и выбираем этот
-                target = item if isinstance(item, ControlItem) else item.parentItem()
-                if isinstance(target, ControlItem) and not target.isSelected():
+                if self._active_context_container and self._active_context_container != target_control:
+                    FocusRegistry().reset_active_context()
+                    self._active_context_container = None
+
+                if self._active_context_container and self._active_context_container == target_control:
+                    target_control.mousePressEvent(event)
+                    return
+
+                selected_now = [i for i in self.selectedItems() if isinstance(i, ControlItemBase)]
+                if len(selected_now) > 1 and not (event.modifiers() & Qt.KeyboardModifier.ControlModifier):
+                    if target_control in selected_now:
+                        self.clearSelection()
+                        target_control.setSelected(True)
+                        if hasattr(self, 'select_control'):
+                            self.select_control(target_control)
+                        event.accept()
+                        return
+
+                if event.modifiers() & Qt.KeyboardModifier.ControlModifier:
+                    if not self._active_context_container:
+                        target_control.setSelected(not target_control.isSelected())
+                    event.accept()
+                    return
+
+                if not target_control.isSelected():
+                    FocusRegistry().reset_active_context()
                     self.clearSelection()
-                    target.setSelected(True)
+                    target_control.setSelected(True)
+                    self._active_context_container = target_control
 
-        # Пробрасываем клик вглубь фреймворка Qt Graphics View
+                    if hasattr(self, 'select_control'):
+                        self.select_control(target_control)
+
         super().mousePressEvent(event)
 
-        # Синхронизируем панели свойств под текущую группу выделения
-        selected = self.selectedItems()
-        if hasattr(self, 'select_control'):
-            if len(selected) == 1:
-                self.select_control(selected[0])
-            elif len(selected) > 1:
-                self.select_control(selected)
-
     def mouseMoveEvent(self, event: QGraphicsSceneMouseEvent):
-        """Обработка перемещения мыши по холсту."""
         super().mouseMoveEvent(event)
-
-        # Транслируем координаты мыши относительно бланка формы в статус-бар
         if hasattr(self, 'background') and self.background:
             local_form_pos = self.background.mapFromScene(event.scenePos())
             if hasattr(self.background, 'status_bar') and self.background.status_bar:
@@ -77,13 +91,10 @@ class EventsMixin:
                     sb.set_coordinates(local_form_pos.x(), local_form_pos.y())
 
     def mouseReleaseEvent(self, event: QGraphicsSceneMouseEvent):
-        """Обработка отпускания кнопки мыши."""
         super().mouseReleaseEvent(event)
-
-        # Если после резиновой рамки или драга изменился состав выделения
+        if self._active_context_container:
+            return
         selected = self.selectedItems()
         if hasattr(self, 'select_control'):
             if len(selected) == 1:
-                self.select_control(selected[0])
-            elif len(selected) > 1:
                 self.select_control(selected)
