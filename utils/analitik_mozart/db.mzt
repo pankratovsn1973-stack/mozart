@@ -1,0 +1,61 @@
+{
+    "db": {
+        "host": "localhost",
+        "port": "5432",
+        "name": "mozart_erp",
+        "user": "postgres",
+        "pass": "SQLSerIra",
+        "schema": "mozart"
+    },
+    "l2": {
+        "path": "/home/sergey/Documents/configurate/layer2_server",
+        "port": 8000
+    },
+    "l3": {
+        "path": "/home/sergey/Documents/configurate/layer3_client",
+        "starter": "starter.py"
+    },
+    "project": {
+        "root": "/home/sergey/Documents/configurate/",
+        "ignore_dirs": [
+            "__pycache__",
+            ".git",
+            ".svn",
+            ".hg",
+            ".idea",
+            ".vscode",
+            ".venv",
+            "venv",
+            "env",
+            ".env",
+            "node_modules",
+            "build",
+            "dist",
+            ".pytest_cache",
+            ".mypy_cache",
+            ".tox",
+            ".ipynb_checkpoints",
+            ".DS_Store",
+            "Thumbs.db",
+            "logs",
+            "backup",
+            "old",
+            "tmp",
+            "backups"
+        ],
+        "ignore_extensions": [
+            ".pyc",
+            ".pyo",
+            ".so",
+            ".dll",
+            ".dylib",
+            ".exe",
+            ".bin",
+            ".dat",
+            ".db",
+            ".sqlite",
+            ".sqlite3"
+        ],
+        "include_only_python": true
+    }
+}

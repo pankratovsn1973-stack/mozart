@@ -85,12 +85,21 @@ class ProjectPackerWidget(QWidget):
 
         right_layout.addStretch(1)
 
+        # --- КНОПКА 1 ---
         self.btn_json = QPushButton("Создать Mozart.json", self)
         self.btn_json.setStyleSheet(
             "QPushButton { background-color: #f0f0f0; color: #000000; border: 1px solid #ababab; border-radius: 3px; height: 38px; font-weight: bold; } QPushButton:hover { background-color: #e2e2e2; }")
         self.btn_json.clicked.connect(
             lambda: self.ops.export_to_json(self, self.model.get_selected_files(), self.edt_target_path.text().strip()))
 
+        # --- КНОПКА 2 (НОВАЯ!) ---
+        self.btn_txt = QPushButton("Выгрузить файлы в один TXT", self)
+        self.btn_txt.setStyleSheet(
+            "QPushButton { background-color: #f0f0f0; color: #000000; border: 1px solid #ababab; border-radius: 3px; height: 38px; font-weight: bold; } QPushButton:hover { background-color: #e2e2e2; }")
+        self.btn_txt.clicked.connect(
+            lambda: self.ops.export_to_single_txt(self, self.model.get_selected_files(), self.edt_target_path.text().strip()))
+
+        # --- КНОПКА 3 ---
         self.btn_copy = QPushButton("Создать структуру каталогов", self)
         self.btn_copy.setStyleSheet(
             "QPushButton { background-color: #f0f0f0; color: #000000; border: 1px solid #ababab; border-radius: 3px; height: 38px; font-weight: bold; } QPushButton:hover { background-color: #e2e2e2; }")
@@ -99,6 +108,7 @@ class ProjectPackerWidget(QWidget):
                                                                            self.edt_folder_name.text().strip()))
 
         right_layout.addWidget(self.btn_json)
+        right_layout.addWidget(self.btn_txt)  # Добавлена новая кнопка в интерфейс
         right_layout.addWidget(self.btn_copy)
         main_hbox.addWidget(right_widget, stretch=4)
 
@@ -129,7 +139,6 @@ class ProjectPackerWidget(QWidget):
     def _restore_expanded_nodes(self, expanded_paths):
         if not expanded_paths:
             return
-        # Очищаем кортежи SQLite в чистые строки
         clean_paths = [p[0] if isinstance(p, tuple) else p for p in expanded_paths]
         expanded_set = set(clean_paths)
         while True:
@@ -155,7 +164,6 @@ class ProjectPackerWidget(QWidget):
     def load_state(self):
         target_path, folder_name, checked_nodes, expanded_nodes = self.db.load_settings()
 
-        # Распаковываем кортежи SQLite в обычные строки
         clean_target = target_path[0] if isinstance(target_path, tuple) else target_path
         clean_folder = folder_name[0] if isinstance(folder_name, tuple) else folder_name
 
@@ -165,7 +173,6 @@ class ProjectPackerWidget(QWidget):
         self._restore_expanded_nodes(expanded_nodes)
 
         if checked_nodes:
-            # ИСПРАВЛЕНО ЖЕСТКО: Распаковываем кортежи строк из SQLite перед os.path.exists
             clean_checked = [p[0] if isinstance(p, tuple) else p for p in checked_nodes]
             valid_nodes = [p for p in clean_checked if os.path.exists(p)]
             self.model.restore_checked_nodes(valid_nodes)

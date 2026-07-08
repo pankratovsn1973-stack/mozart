@@ -1,5 +1,18 @@
-# -*- coding: utf-8 -*-
 # /home/sergey/Documents/configurate/widgets/form_designer_old/main_widget_runtime.py
+# -*- coding: utf-8 -*-
+
+"""
+Модуль: Изолированный сервис обработки методов рантайма бланка формы.
+
+Роль в архитектуре Mozart ERP:
+    - Обеспечивает загрузку шаблонов форм в рантайме.
+    - Синхронизирует роли и сущности с бланком формы.
+    - Интегрируется с реестром и моделью данных.
+
+Ключевые зависимости:
+    - FormObjectsRegistry - для регистрации формы.
+    - DesignerDataModel - для хранения свойств.
+"""
 
 from PySide6.QtWidgets import QGraphicsScene
 from .form_objects_registry import FormObjectsRegistry
@@ -8,11 +21,38 @@ from .designer_serializer import DesignerSerializer
 
 
 class FormDesignerRuntime:
-    """Изолированный сервис обработки методов рантайма бланка формы."""
+    """
+    Изолированный сервис обработки методов рантайма бланка формы.
+
+    Назначение:
+        - Загрузка шаблонов форм.
+        - Синхронизация ролей и сущностей.
+        - Интеграция с реестром.
+
+    Ключевые свойства:
+        - Нет собственных свойств (все статическое).
+
+    Основные методы:
+        - load_form_template() - Загрузка шаблона формы.
+        - sync_role() - Синхронизация роли.
+        - sync_entity() - Синхронизация сущности.
+    """
 
     @staticmethod
     def load_form_template(designer_instance, width, height, title, controls_data=None):
-        """Инициализирует шаблон бланка формы и наполняет In-Memory СУБД."""
+        """
+        Инициализирует шаблон бланка формы и наполняет In-Memory СУБД.
+
+        Args:
+            designer_instance: FormDesigner - Экземпляр дизайнера
+            width: int - Ширина формы
+            height: int - Высота формы
+            title: str - Заголовок формы
+            controls_data: list - Данные контролов для загрузки
+
+        Returns:
+            FormBackground - Созданный бланк формы
+        """
         if designer_instance.property_panel:
             designer_instance.property_panel.block_sync = True
 
@@ -30,7 +70,17 @@ class FormDesignerRuntime:
                 print(f"[Runtime] Ошибка чтения mstate_json: {e}")
 
         explicit_fid = "form_root"
-        FormObjectsRegistry().register_object(designer_instance.runtime_form, explicit_id=explicit_fid)
+
+        # ==================== ИСПРАВЛЕНИЕ ====================
+        # Регистрация формы в реестре с новой сигнатурой
+        FormObjectsRegistry().register_object(
+            control_id=explicit_fid,
+            widget_obj=designer_instance.runtime_form,
+            parentid=None,
+            full_path="",
+            calias="OrdinaryDictionary",
+            cclass="form"
+        )
 
         model = DesignerDataModel()
         model.properties_instances[(explicit_fid, "width")] = str(int(width))
@@ -43,7 +93,6 @@ class FormDesignerRuntime:
         if controls_data:
             designer_instance.scene.load_controls(controls_data)
 
-        # Переводим инспектор в ленивый режим: очищаем и ждем первого клика по сетке/контролу
         designer_instance.property_panel.clearContents()
         designer_instance.property_panel.setRowCount(0)
         designer_instance.property_panel.current_control_id = None
@@ -63,7 +112,13 @@ class FormDesignerRuntime:
 
     @staticmethod
     def sync_role(designer_instance, role_alias):
-        """Синхронизация роли бизнес-формы."""
+        """
+        Синхронизация роли бизнес-формы.
+
+        Args:
+            designer_instance: FormDesigner - Экземпляр дизайнера
+            role_alias: str - Алиас роли
+        """
         if designer_instance.runtime_form:
             fid = "form_root"
             setattr(designer_instance.runtime_form, 'form_role', role_alias)
@@ -73,7 +128,13 @@ class FormDesignerRuntime:
 
     @staticmethod
     def sync_entity(designer_instance, entity_alias):
-        """Синхронизация привязки сущности к бланку формы."""
+        """
+        Синхронизация привязки сущности к бланку формы.
+
+        Args:
+            designer_instance: FormDesigner - Экземпляр дизайнера
+            entity_alias: str - Алиас сущности
+        """
         if designer_instance.runtime_form:
             fid = "form_root"
             designer_instance.runtime_form.entity_alias = entity_alias

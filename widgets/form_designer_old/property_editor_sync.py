@@ -1,5 +1,19 @@
-# -*- coding: utf-8 -*-
 # /home/sergey/Documents/configurate/widgets/form_designer_old/property_editor_sync.py
+# -*- coding: utf-8 -*-
+
+"""
+Модуль: Компонент синхронизации геометрии и фокуса инспектора свойств.
+
+Роль в архитектуре Mozart ERP:
+    - Обеспечивает синхронизацию между инспектором свойств и сценой.
+    - Управляет фокусом и выделением контролов.
+    - Интегрируется с реестром для поиска объектов.
+
+Ключевые зависимости:
+    - PropertyEditorBase - базовый UI инспектора.
+    - DesignerDataModel - in-memory хранилище.
+    - FormObjectsRegistry - реестр объектов.
+"""
 
 from PySide6.QtCore import Qt
 from .property_editor_base import PropertyEditorBase
@@ -9,10 +23,33 @@ from .form_objects_registry import FormObjectsRegistry
 
 
 class PropertyEditorSync(PropertyEditorBase):
-    """Компонент синхронизации геометрии, управляющий защитными барьерами фокуса."""
+    """
+    Компонент синхронизации геометрии, управляющий защитными барьерами фокуса.
+
+    Назначение:
+        - Синхронизация инспектора с выбранным контролом.
+        - Обновление геометрии при изменении размеров.
+        - Управление фокусом.
+
+    Ключевые свойства:
+        - current_control_id: str - ID текущего контрола.
+        - current_item: ControlItem - Текущий выбранный контрол.
+        - _designer_ref: FormDesigner - Ссылка на дизайнер.
+        - block_sync: bool - Блокировка синхронизации.
+
+    Основные методы:
+        - set_control() - Установка контрола для инспектирования.
+        - set_form() - Установка формы для инспектирования.
+        - update_geometry_values() - Обновление геометрии.
+    """
 
     def set_control(self, control_item):
-        """Слот переключения фокуса инспектора на выбранный элемент холста."""
+        """
+        Слот переключения фокуса инспектора на выбранный элемент холста.
+
+        Args:
+            control_item: ControlItem - Выбранный контрол
+        """
         registry = FormObjectsRegistry()
 
         if not control_item:
@@ -31,13 +68,27 @@ class PropertyEditorSync(PropertyEditorBase):
         self.current_control_id = registry.get_id_by_widget(control_item)
 
         if self.current_control_id == "unknown":
+            # Если контрол не найден в реестре, пробуем зарегистрировать
             explicit_id = getattr(control_item, 'control_id', None)
-            self.current_control_id = registry.register_object(control_item, explicit_id=explicit_id)
+            if explicit_id:
+                self.current_control_id = registry.register_object(
+                    control_id=explicit_id,
+                    widget_obj=control_item,
+                    parentid=None,
+                    full_path="",
+                    calias=control_item.objectName(),
+                    cclass=control_item.control_type
+                )
 
         self._reload_properties_from_model()
 
     def set_form(self, parent_designer):
-        """Принудительная жесткая установка фокуса инспектора на бланк формы."""
+        """
+        Принудительная жесткая установка фокуса инспектора на бланк формы.
+
+        Args:
+            parent_designer: FormDesigner - Экземпляр дизайнера
+        """
         self._designer_ref = parent_designer
         registry = FormObjectsRegistry()
 
@@ -45,11 +96,30 @@ class PropertyEditorSync(PropertyEditorBase):
         self.current_item = None
 
         if parent_designer and getattr(parent_designer, 'runtime_form', None):
-            registry.register_object(parent_designer.runtime_form, explicit_id="form_root")
+            # ==================== ИСПРАВЛЕНИЕ ====================
+            # Регистрация формы в реестре с новой сигнатурой
+            registry.register_object(
+                control_id="form_root",
+                widget_obj=parent_designer.runtime_form,
+                parentid=None,
+                full_path="",
+                calias="OrdinaryDictionary",
+                cclass="form"
+            )
 
         self._reload_properties_from_model()
 
     def update_geometry_values(self, x, y, width, height, sender_id: str = None):
+        """
+        Обновление геометрических свойств в инспекторе.
+
+        Args:
+            x: int - Координата X
+            y: int - Координата Y
+            width: int - Ширина
+            height: int - Высота
+            sender_id: str - ID отправителя (для проверки контекста)
+        """
         if self.block_sync or not self.current_control_id:
             return
 

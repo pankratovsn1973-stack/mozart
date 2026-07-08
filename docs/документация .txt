@@ -1,0 +1,2599 @@
+ачну с самых важных модулей, а потом продолжу по всем остальным.
+📚 ДОКУМЕНТАЦИЯ ПРОЕКТА MOZART ERP
+🏗️ ОСНОВНАЯ АРХИТЕКТУРА
+
+Проект представляет собой Low-code конфигуратор для ERP-системы Mozart. Визуальный дизайнер форм, редактор справочников, конструктор импорта данных.
+Технологический стек:
+
+    GUI: PySide6 (Qt for Python)
+
+    База данных: PostgreSQL
+
+    Графика: QGraphicsScene/QGraphicsView
+
+    Движок импорта: Собственный, с поддержкой JSON/XML/DBF/CSV/Excel
+
+📁 СТРУКТУРА ПРОЕКТА
+text
+
+configurate/
+├── ide_main.py              # Точка входа, главное окно
+├── ide_core.py              # Ядро проекта (подключение к БД, проект)
+├── ide_db_work.py           # Диалог работы с БД (вкладки)
+├── ide_ui_panels.py         # UI-панели главного окна
+├── ide_field_edit.py        # Редактор полей сущностей
+├── database.py              # Сервис БД
+├── crud_buttons.py          # Кнопки CRUD
+├── composition_manager.py   # Управление композициями
+├── base_manager.py          # Базовый менеджер сущностей
+│
+├── controls/                # ERP-контролы (виджеты)
+│   ├── __init__.py          # Фабрика контролов
+│   ├── base_control.py      # Базовый класс всех контролов
+│   ├── textbox.py           # Текстовое поле
+│   ├── numberbox.py         # Числовое поле
+│   ├── datebox.py           # Дата
+│   ├── checkbox.py          # Флажок
+│   ├── memo.py              # Многострочный текст
+│   ├── combobox.py          # Выпадающий список
+│   ├── listbox.py           # Список
+│   ├── optiongroup.py       # Группа радиокнопок
+│   ├── image_view.py        # Изображение
+│   ├── reference.py         # Ссылка на справочник
+│   ├── grid.py              # Таблица
+│   ├── container.py         # Контейнер/Группа
+│   ├── tab_container.py     # Вкладки
+│   ├── form.py              # Форма
+│   ├── label.py             # Метка
+│   ├── button.py            # Кнопка
+│   ├── reference_base.py    # База для Reference
+│   ├── reference_ui.py      # UI для Reference
+│   └── data_source_mixin.py # Миксин источников данных
+│
+├── tabs/                    # Вкладки конфигуратора
+│   ├── __init__.py
+│   ├── base_tab.py          # Базовая вкладка
+│   ├── balance_units_tab.py # Балансовые единицы
+│   ├── users_roles_tab.py   # Пользователи и роли
+│   ├── entities_tab.py      # Сущности (справочники)
+│   ├── documents_tab.py     # Документы
+│   ├── data_view_tab.py     # Просмотр данных
+│   ├── relations_tab.py     # Связи
+│   ├── import_tab.py        # Импорт данных
+│   ├── class_templates_tab.py # Шаблоны классов
+│   ├── forms_tab.py         # Формы
+│   ├── forms_wizard_factory.py # Фабрика форм из мастера
+│   ├── forms_tab_ui.py      # UI вкладки форм
+│   ├── form_elements_widget.py # Элементы формы
+│   │
+│   ├── entity_subtabs/      # Подвкладки сущностей
+│   │   ├── fields_tab.py    # Поля сущности
+│   │   ├── bu_visibility_tab.py # Видимость БЕ
+│   │   ├── composition_tab.py # Подчинённые таблицы
+│   │   ├── routes_tab.py    # Маршруты (заглушка)
+│   │   └── import_tab.py    # Импорт для сущности
+│   │
+│   ├── forms/               # Формы (диалоги редактора)
+│   │   ├── form_properties_dialog.py # Диалог свойств формы
+│   │   ├── property_dialog_ui.py # UI диалога
+│   │   ├── form_wizard.py   # Мастер создания форм
+│   │   ├── form_utils.py    # Утилиты для форм
+│   │   └── live_form_designer.py # Живая форма (просмотр)
+│   │
+│   └── user_roles/          # Пользователи и роли
+│       ├── users_tab.py     # Вкладка пользователей
+│       ├── roles_tab.py     # Вкладка ролей
+│       ├── context_tab.py   # Контекст (пользователь-роль-БЕ)
+│       ├── menu_manager.py  # Управление меню
+│       └── dialogs.py       # Диалоги CRUD
+│
+├── widgets/                 # Виджеты общего назначения
+│   ├── __init__.py
+│   ├── reference_editor.py  # Редактор ссылок
+│   ├── reference_selector.py # Селектор ссылок
+│   ├── visual_form_editor.py # Обёртка дизайнера форм
+│   │
+│   └── form_designer_old/   # Визуальный дизайнер форм
+│       ├── __init__.py
+│       ├── main_widget.py   # Главный виджет дизайнера
+│       ├── form_scene.py    # Сцена дизайнера
+│       ├── form_background.py # Бланк формы
+│       ├── control_item.py  # Графический контрол на сцене
+│       ├── control_item_movement.py # Перемещение
+│       ├── control_item_context.py # Контекст (выделение)
+│       ├── resize_handle.py # Маркер изменения размера
+│       ├── scene_loader_mixin.py # Загрузка контролов
+│       ├── scene_controls_mixin.py # Управление контролами
+│       ├── scene_events_mixin.py # События сцены
+│       ├── scene_grid_mixin.py # Сетка
+│       ├── scene_dragdrop_mixin.py # Drag&Drop
+│       ├── form_objects_registry.py # Реестр объектов
+│       ├── designer_data_model.py # In-Memory БД
+│       ├── designer_serializer.py # Сериализация
+│       ├── designer_view.py # View для сцены
+│       ├── property_editor.py # Инспектор свойств
+│       ├── property_editor_base.py # База инспектора
+│       ├── property_editor_sync.py # Синхронизация свойств
+│       ├── property_table.py # Таблица свойств
+│       ├── property_inspector.py # Инспектор объектов
+│       ├── property_applier.py # Применение свойств
+│       ├── property_loader.py # Загрузка свойств
+│       ├── palette_widget.py # Палитра контролов
+│       ├── hierarchy_widget.py # Дерево иерархии
+│       ├── toolbar_bar.py # Панель инструментов
+│       ├── statusbar_bar.py # Статусная строка
+│       ├── title_bar.py # Заголовок формы
+│       ├── focus_registry.py # Реестр фокуса
+│       ├── events_panel.py # Панель событий
+│       ├── methods_panel.py # Панель методов
+│       └── code_editor.py # Редактор кода
+│
+├── mozart_import/           # Подсистема импорта данных
+│   ├── __init__.py
+│   ├── core/                # Ядро импорта
+│   │   ├── models.py        # Модели данных
+│   │   ├── import_engine.py # Движок импорта
+│   │   ├── import_orchestrator.py # Оркестратор
+│   │   ├── profile_manager.py # Управление профилями
+│   │   ├── metadata_creator.py # Создание метаданных
+│   │   ├── mozart_matcher.py # Сопоставление с Mozart
+│   │   ├── schema_analyzer.py # Анализ схемы
+│   │   └── mapping_manager.py # Управление маппингом
+│   │
+│   ├── connectors/          # Коннекторы к источникам
+│   │   ├── base_connector.py # Базовый коннектор
+│   │   ├── file_connector.py # Файлы (JSON/XML/DBF/CSV)
+│   │   ├── db_connector.py  # Базы данных
+│   │   └── url_connector.py # HTTP/HTTPS
+│   │
+│   ├── designer/            # Визуальный конструктор импорта
+│   │   ├── designer_v2.py   # Главный конструктор
+│   │   ├── relation_scene.py # Сцена связей
+│   │   ├── graphics_items.py # Графические элементы
+│   │   ├── graphics_view.py # View для сцены
+│   │   ├── link_line.py     # Линии связей
+│   │   ├── scene_profile_adapter.py # Адаптер профиля
+│   │   ├── designer_links.py # Управление связями
+│   │   ├── designer_import.py # Операции импорта
+│   │   ├── designer_trees.py # Деревья
+│   │   ├── designer_mass_field_dialog.py # Массовое создание полей
+│   │   ├── designer_utils.py # Утилиты
+│   │   ├── entity_creator.py # Создание сущностей
+│   │   ├── link_edit_dialog.py # Диалог связей
+│   │   └── source_ref_dialog.py # Ссылки источника
+│   │
+│   ├── graph/               # Графовые компоненты
+│   │   ├── graphics_items.py # Элементы графа
+│   │   ├── graphics_view.py # View
+│   │   ├── link_line.py     # Линии
+│   │   └── relation_scene.py # Сцена связей
+│   │
+│   ├── utils/               # Утилиты импорта
+│   │   ├── ext_helper.py    # Помощник ext-таблиц
+│   │   ├── field_creator.py # Создание полей
+│   │   └── log_manager.py   # Логирование
+│   │
+│   ├── wizards/             # Мастера импорта
+│   │   ├── import_wizard.py # Главный мастер
+│   │   ├── source_page.py   # Страница источника
+│   │   ├── schema_page.py   # Страница схемы
+│   │   ├── relation_page.py # Страница связей
+│   │   ├── mapping_detail_page.py # Детали маппинга
+│   │   ├── execute_page.py  # Страница выполнения
+│   │   └── wizard_dialogs.py # Диалоги мастера
+│   │
+│   └── gui/                 # GUI компоненты
+│       └── progress_dialog.py # Диалог прогресса
+│
+├── lang/                    # Интернационализация
+│   ├── local_translator.py  # Локальный переводчик (SQLite)
+│   └── translator.py        # Переводчик (PostgreSQL)
+│
+├── utils/                   # Утилиты
+│   ├── json_to_ui.py        # JSON -> .ui
+│   ├── ui_to_json.py        # .ui -> JSON
+│   ├── extract_strings.py   # Извлечение строк для перевода
+│   ├── migrate_strings_to_translator.py # Миграция строк
+│   └── ... (разные утилиты)
+│
+└── docs/                    # Документация (генерируется)
+
+📄 ДЕТАЛЬНОЕ ОПИСАНИЕ ФАЙЛОВ
+1. ide_main.py — Главная точка входа
+
+Назначение: Запускает приложение, создаёт главное окно, управляет жизненным циклом IDE.
+
+Классы:
+MozartIDE(QMainWindow, MozartIDEPanelsMixin)
+
+Главное окно конфигуратора.
+
+Методы:
+Метод	Параметры	Описание
+__init__()	-	Инициализация окна, меню, панелей
+_init_menu()	-	Создание меню (Файл, Язык, Помощь)
+new_project()	-	Создание нового проекта (.mzt)
+open_project()	-	Открытие проекта, фикс кликов мыши в Linux
+save_project()	-	Сохранение проекта
+change_language(lang_code)	lang_code (str)	Смена языка интерфейса
+about()	-	Окно "О программе"
+
+Сигналы: Нет
+
+Особенности:
+
+    Использует QFileDialog.DontUseNativeDialog для фикса кликов мыши в Linux
+
+    Поддерживает 5 языков: русский, английский, немецкий, китайский, татарский
+
+2. ide_core.py — Ядро проекта
+
+Назначение: Управление проектом, подключение к БД, работа с PostgreSQL.
+
+Классы:
+GoProject
+
+Единый объект-синглтон для управления состоянием проекта.
+
+Атрибуты:
+Атрибут	Тип	Описание
+db_host	str	Хост PostgreSQL
+db_port	str	Порт PostgreSQL
+db_name	str	Имя базы данных
+db_user	str	Пользователь
+db_pass	str	Пароль
+db_conn	connection	Активное соединение psycopg2
+current_user_id	int	ID текущего пользователя
+l2_path	str	Путь к серверному слою
+l3_path	str	Путь к клиентскому слою
+
+Методы:
+Метод	Параметры	Описание
+p_Connect()	-	Подключение к БД с проверкой прав конфигуратора
+f_Execute(sql, params)	SQL-запрос, параметры	Выполнение SQL-запроса
+p_SaveProject(file_path)	путь к .mzt	Сохранение проекта в JSON
+p_LoadProject(file_path)	путь к .mzt	Загрузка проекта из JSON
+
+Особенности:
+
+    Проверяет роль CONFIG у пользователя
+
+    Использует psycopg2 для работы с PostgreSQL
+
+3. ide_db_work.py — Диалог работы с БД
+
+Назначение: Главный диалог управления сущностями, объединяет все вкладки.
+
+Классы:
+DBWorkDialog(QDialog)
+
+Диалог с табуляцией для управления сущностями.
+
+Методы:
+Метод	Параметры	Описание
+__init__()	-	Создание вкладок
+retranslate_ui()	-	Обновление переводов
+
+Вкладки:
+
+    Балансовые единицы (BalanceUnitsTab)
+
+    Пользователи и роли (UsersRolesTab)
+
+    Сущности (EntitiesTab)
+
+    Документы (DocumentsTab)
+
+    Просмотр данных (DataViewTab)
+
+    Связи (RelationsTab)
+
+    Импорт (ImportTab)
+
+    Шаблоны классов (ClassTemplatesTab)
+
+    Формы (FormsTab)
+
+4. controls/__init__.py — Фабрика контролов
+
+Назначение: Создание ERP-контролов по строковому типу.
+
+Функции:
+create_control(control_type, parent=None, db=None, alis=None)
+
+Параметры:
+Параметр	Тип	Описание
+control_type	str	Тип контрола (textbox, numberbox, reference и т.д.)
+parent	QWidget	Родительский виджет
+db	DatabaseService	Сервис БД (для Reference)
+alis	str	Алиас контрола
+
+Возвращает: QWidget — созданный контрол
+
+Поддерживаемые типы:
+Тип	Класс	Назначение
+textbox	MozartTextBox	Текстовое поле
+numberbox	MozartNumberBox	Числовое поле
+datebox	MozartDateBox	Дата
+checkbox	MozartCheckBox	Флажок
+memo	MozartMemo	Многострочный текст
+combobox	MozartComboBox	Выпадающий список
+listbox	MozartListBox	Список
+optiongroup	MozartOptionGroup	Радиогруппа
+imageview	MozartImageView	Изображение
+reference	MozartReference	Ссылка на справочник
+grid	MozartGrid	Таблица
+container/group	MozartContainer	Группа элементов
+tabcontainer	MozartTabContainer	Вкладки
+label	MozartLabel	Метка
+button	MozartButton	Кнопка
+5. controls/base_control.py — Базовый класс контролов
+
+Назначение: Миксин с общими свойствами для всех ERP-контролов.
+
+Класс:
+BaseControl
+
+Базовый миксин для всех контролов.
+
+Свойства (свойства-аксессоры):
+Свойство	Тип	Описание
+binding_field	str	Поле привязки к СУБД
+entity_alias	str	Алиас сущности-источника
+is_required	bool	Обязательное поле
+is_readonly	bool	Только для чтения
+alis	str	Алиас контрола
+properties	dict	Все свойства контрола
+
+Методы:
+Метод	Описание
+_apply_readonly()	Применить состояние только для чтения
+set_value(value)	Установить значение
+get_value()	Получить значение
+is_dirty()	Проверка изменения
+reset()	Сброс к исходному значению
+6. controls/reference.py — Ссылка
+
+Назначение: Композитный контрол для выбора значения из справочника. В режиме дизайна маскируется под QLabel.
+
+Класс:
+MozartReference(QWidget, BaseControl)
+
+Ссылка на справочник с поддержкой дизайн-маскирования.
+
+Структура контрола:
+
+    label_widget (QLabel) — текстовая метка
+
+    edit_runtime (QLineEdit) — поле в режиме выполнения
+
+    edit_design (QLabel) — заглушка в режиме дизайна
+
+    btn_select (QPushButton) — кнопка выбора (📁)
+
+    btn_clear (QPushButton) — кнопка очистки (✖)
+
+Методы:
+Метод	Описание
+set_design_mode(design_mode, full_path, alias)	Переключение между режимом дизайна и выполнения
+set_value(instance_id, display_value)	Установка значения
+set_db(db)	Установка сервиса БД
+7. widgets/form_designer_old/main_widget.py — Дизайнер форм
+
+Назначение: WYSIWYG-редактор форм с перетаскиванием контролов.
+
+Класс:
+FormDesigner(QWidget)
+
+Главный виджет визуального дизайнера.
+
+Структура:
+text
+
+┌─────────────────────────────────────────────────────┐
+│  ToolBarBar (панель инструментов)                   │
+├──────────┬──────────────────────────┬───────────────┤
+│ Palette  │  Canvas (сцена дизайна)  │  Properties   │
+│ (контролы)│  + FormBackground       │  (инспектор)  │
+│          │  + ControlItem's        │               │
+├──────────┴──────────────────────────┴───────────────┤
+│  Debug Table (сырые данные DesignerDataModel)       │
+└─────────────────────────────────────────────────────┘
+
+Методы:
+Метод	Описание
+init_form(width, height, title)	Создание бланка формы
+get_form_data()	Получение данных формы для сохранения
+_on_control_selected(control_item)	Выбор контрола
+_on_geometry_changed(...)	Изменение геометрии
+8. widgets/form_designer_old/form_scene.py — Сцена дизайнера
+
+Назначение: Графическая сцена для размещения бланка формы и контролов.
+
+Класс:
+FormDesignerScene(QGraphicsScene, миксины)
+
+Основная сцена дизайнера.
+
+Наследует миксины:
+Миксин	Назначение
+GridMixin	Управление сеткой
+EventsMixin	События (клики, выделение)
+ControlsMixin	Добавление/удаление контролов
+SceneLoaderMixin	Загрузка контролов из БД
+
+Сигналы:
+Сигнал	Описание
+control_selected(object)	Выбран контрол
+form_resized(float, float)	Изменён размер формы
+control_added(object)	Добавлен контрол
+control_deleted(str)	Удалён контрол
+geometry_changed(str, int, int, int, int)	Изменена геометрия
+
+Методы:
+Метод	Описание
+init_form(width, height, title)	Инициализация бланка формы
+add_control(control_widget, control_id, control_type, x, y, parent_item)	Добавление контрола
+delete_control(control_id)	Удаление контрола
+prepare_save_data()	Подготовка данных для сохранения
+set_focused_control(control_item)	Установка фокуса
+9. widgets/form_designer_old/control_item.py — Графический контрол
+
+Назначение: Обёртка QWidget для размещения на сцене с поддержкой перемещения, выделения, ресайза.
+
+Класс:
+ControlItem(ControlItemMovement, ControlItemContext, QGraphicsProxyWidget)
+
+Графический прокси-контейнер на сцене.
+
+Наследует:
+Класс	Назначение
+ControlItemMovement	Перемещение по сцене
+ControlItemContext	Выделение, контекстное меню
+
+Методы:
+Метод	Описание
+__init__(widget, control_id, control_type, parent)	Инициализация
+handle_internal_click(event)	Обработка клика по внутренним элементам (Reference)
+update_handles_position()	Обновление позиции маркера ресайза
+setWidgetSize(width, height)	Изменение размера
+paint(painter, option, widget)	Отрисовка синей рамки выделения
+mousePressEvent(event)	Перехват кликов (поддержка внутренних элементов)
+
+Особенности:
+
+    _get_calias(widget) — безопасное получение calias с fallback на objectName
+
+    get_meta_by_parent_and_calias(parent_id, calias) — поиск метаданных внутренних элементов
+
+10. widgets/form_designer_old/form_objects_registry.py — Реестр объектов
+
+Назначение: Глобальный реестр всех объектов на холсте. Единый источник истины для идентификации контролов.
+
+Класс:
+FormObjectsRegistry
+
+Синглтон-реестр визуальных объектов.
+
+Атрибуты:
+Атрибут	Описание
+_registry	Словарь {id(widget): meta}
+_index_by_path	Индекс {(parent_id, calias): id(widget)}
+
+Метаданные (meta):
+Поле	Описание
+control_id	ID контрола в БД
+parent_id	ID родителя
+calias	Бизнес-алиас
+full_path	Полный путь (например, "OrdinaryDictionary.control_823")
+widget_ref	Слабая ссылка на виджет
+
+Методы:
+Метод	Описание
+register_object(widget_obj, parent_container_id, explicit_id, full_path, calias)	Регистрация объекта
+get_meta_by_widget(widget_obj)	Поиск метаданных по виджету
+get_meta_by_parent_and_calias(parent_id, calias)	Поиск по родителю и алиасу
+get_id_by_widget(widget_obj)	Получение ID по виджету
+get_widget_by_id(control_id)	Получение виджета по ID
+11. tabs/entities_tab.py — Управление сущностями
+
+Назначение: Управление типами сущностей (справочники, документы). Создание, редактирование, удаление, копирование.
+
+Классы:
+EntitiesTab(BaseTab)
+
+Вкладка управления сущностями с деревом и подвкладками.
+
+Подвкладки:
+
+    Поля (FieldsTab)
+
+    Видимость БЕ (BUVISibilityTab)
+
+    Подчинённые таблицы (CompositionTab)
+
+    Маршруты (RoutesTab)
+
+EntityTypeEditDialog(QDialog)
+
+Диалог редактирования сущности.
+
+Поля:
+Поле	Описание
+cname	Системное имя (латиница)
+calias	Алиас (человеческое имя)
+mcomment	Описание
+class_id	Класс сущности (DICT/DOC)
+lisdependent	Зависимая
+lishierarchy	Иерархическая
+lisversioned	Версионная
+status_id	Статус (DEV/PROD)
+12. tabs/entity_subtabs/fields_tab.py — Поля сущности
+
+Назначение: Управление полями сущности (meta.fields).
+
+Класс:
+FieldsTab(QWidget)
+
+Вкладка с таблицей полей.
+
+CRUD операции:
+Операция	Метод	Описание
+Добавить	add_field()	Создание нового поля
+Редактировать	edit_field()	Изменение существующего поля
+Удалить	delete_selected_fields()	Удаление выбранных полей
+
+Типы полей (cfieldtype):
+Код	Тип	Описание
+C	String	Строка
+I	Integer	Целое число
+N	Numeric	Число с плавающей точкой
+D	Date	Дата
+T	Timestamp	Дата+время
+L	Logical	Логический (bool)
+M	Memo	Текст
+R	Reference	Ссылка на другую сущность
+G	Geometry	Геометрия
+V	Variant	Variant
+F	File	Файл
+13. mozart_import/core/import_engine.py — Движок импорта
+
+Назначение: Основной движок импорта данных из внешних источников.
+
+Класс:
+ImportEngine
+
+Движок импорта с поддержкой UPSERT.
+
+Методы:
+Метод	Описание
+_ensure_ext_table(entity_id, entity_cname)	Создание ext-таблицы
+_ensure_sourceid_field(entity_id)	Добавление поля sourceid
+_calculate_hash(values, fields_map)	Вычисление хэша для сравнения
+_get_or_create_instance(entity_id, source_id, values, fields_map, stats)	Получение или создание экземпляра
+import_single_entity(entity, ref_rules, instance_cache)	Импорт одной сущности
+run(progress_callback)	Запуск импорта
+
+Режимы импорта:
+Режим	Описание
+append	Только новые записи
+full_update	Обновление при изменении данных
+14. mozart_import/designer/designer_v2.py — Конструктор импорта
+
+Назначение: Визуальный конструктор маппинга исходных таблиц на сущности Mozart.
+
+Класс:
+ImportDesignerV2(QMainWindow)
+
+Графический конструктор импорта.
+
+Компоненты:
+
+    Сцена с двумя зонами: Source Tables (зелёные) и Mozart Entities (жёлтые)
+
+    Линии связей между таблицами и сущностями
+
+    Панель управления (сохранение, импорт, режим)
+
+Методы:
+Метод	Описание
+load_source_tables()	Загрузка таблиц источника
+load_mozart_entities()	Загрузка сущностей Mozart
+edit_link_between(source_node_item, mozart_node_item, ...)	Настройка маппинга
+save_profile()	Сохранение профиля
+perform_import()	Запуск импорта
+15. lang/local_translator.py — Локализация
+
+Назначение: Управление переводами интерфейса с кэшированием в локальной SQLite БД.
+
+Класс:
+LocalTranslator
+
+Синглтон для управления переводами.
+
+Методы:
+Метод	Описание
+set_language(lang_code)	Установка текущего языка
+tr(key)	Получение перевода по ключу
+sync_from_postgres(db_service)	Синхронизация переводов из PostgreSQL
+
+Поддерживаемые языки:
+Код	Язык
+ru	Русский
+en	English
+de	Deutsch
+zh	中文
+tt	Татарча
+📊 СХЕМА БАЗЫ ДАННЫХ (основные таблицы)
+Метаданные (schema meta)
+Таблица	Назначение
+meta.entitytypes	Типы сущностей (справочники, документы)
+meta.entity_classes	Классы сущностей (DICT, DOC)
+meta.fields	Поля сущностей
+meta.field_types	Типы полей
+meta.entity_composition	Композиции (подчинённые таблицы)
+meta.composition_roles	Роли композиций
+meta.forms	Формы
+meta.form_elements	Элементы форм (контролы)
+meta.import_profiles	Профили импорта
+meta.import_links	Связи импорта
+meta.import_mappings	Маппинги полей
+meta.entitytype_visibility	Видимость БЕ
+meta.class_field_templates	Шаблоны полей классов
+meta.class_composition_templates	Шаблоны композиций
+Данные (schema data)
+Таблица	Назначение
+data.entity_instances	Экземпляры сущностей
+data.entity_versions	Версии экземпляров
+Расширения (schema ext)
+Таблица	Назначение
+ext.ext_{cname}	Расширение для каждой сущности
+Аутентификация (schema auth)
+Таблица	Назначение
+auth.users	Пользователи
+auth.roles	Роли
+auth.role_types	Типы ролей
+auth.balanceunits	Балансовые единицы
+auth.userrolecontext	Контекст (пользователь-роль-БЕ)
+auth.menu	Меню интерфейса
+🔗 ОСНОВНЫЕ СВЯЗИ
+text
+
+Form (meta.forms)
+  └── FormElements (meta.form_elements)
+       ├── TextBox → поля сущности (binding_field)
+       ├── Reference → meta.entitytypes (entity_alias)
+       └── Grid → meta.entitytypes (entity_alias)
+
+EntityType (meta.entitytypes)
+  ├── Fields (meta.fields) → FieldType (meta.field_types)
+  ├── Composition (meta.entity_composition)
+  │    ├── Parent → EntityType
+  │    └── Child → EntityType
+  └── Visibility (meta.entitytype_visibility) → BalanceUnit
+
+EntityInstance (data.entity_instances)
+  └── EntityVersion (data.entity_versions)
+       └── ExtTable (ext.ext_{cname})
+            └── Values по полям (meta.fields)
+
+🎯 КЛЮЧЕВЫЕ ПОНЯТИЯ
+1. Сущность (Entity)
+
+Базовый объект системы. Бывает двух классов:
+
+    DICT — справочник (иерархический, версионный)
+
+    DOC — документ (зависимый, версионный)
+
+2. Поле (Field)
+
+Атрибут сущности. Может быть:
+
+    Простым (C, I, N, D, T, L, M)
+
+    Ссылочным (R) — ссылается на другую сущность
+
+3. Экземпляр (Instance)
+
+Конкретная запись сущности. Имеет версии (Version).
+4. Композиция (Composition)
+
+Связь "родитель-потомок" между сущностями. Используется для построения иерархий.
+5. Форма (Form)
+
+Визуальное представление для работы с сущностью. Состоит из контролов.
+6. Контрол (Control)
+
+Элемент формы: текстовое поле, ссылка, таблица и т.д.
+7. Балансовая единица (Balance Unit)
+
+Единица учёта (организация, подразделение). Определяет видимость данных.
+🚀 ПОСЛЕДОВАТЕЛЬНОСТЬ ЗАПУСКА
+
+    Установка зависимостей:
+    bash
+
+    pip install PySide6 psycopg2-binary librosa numpy scipy matplotlib
+
+    Настройка БД:
+
+        Убедитесь, что PostgreSQL запущен
+
+        Создайте базу данных mozart_erp
+
+        Выполните SQL-скрипты для создания схем
+
+    Запуск:
+    bash
+
+    python /home/sergey/Documents/configurate/ide_main.py
+
+    Подключение:
+
+        Введите параметры подключения к БД
+
+        Нажмите "Подключиться"
+
+    Работа:
+
+        Откройте "Работа с БД" → управление сущностями
+
+        Создайте сущность → поля → композиции
+
+        Создайте форму → разместите контролы
+
+        Запустите импорт данных
+
+Это базовая документация. Хотите, чтобы я продолжил с более детальным описанием конкретных модулей или классов?
+да продолжай, пой, птичка
+📚 ПОЛНАЯ ДОКУМЕНТАЦИЯ ПРОЕКТА MOZART ERP
+ПРОДОЛЖЕНИЕ — ДЕТАЛЬНОЕ ОПИСАНИЕ ВСЕХ МОДУЛЕЙ
+16. tabs/entity_subtabs/composition_tab.py — Подчинённые таблицы
+
+Назначение: Управление композициями (связями "родитель-потомок") для сущностей.
+
+Класс:
+CompositionTab(QWidget)
+
+Вкладка управления подчинёнными таблицами.
+
+Структура:
+
+    Две вкладки: "Как родитель" и "Как ребёнок"
+
+    Каждая содержит таблицу со связями
+
+    CRUD-кнопки для управления
+
+Методы:
+Метод	Описание
+set_entity_id(entity_id, is_system)	Установка текущей сущности
+load_parent()	Загрузка связей, где сущность — родитель
+load_child()	Загрузка связей, где сущность — ребёнок
+add_composition(role)	Добавление новой композиции
+edit_composition(mode)	Редактирование композиции
+delete_composition(mode)	Удаление композиции
+
+Системные роли:
+Роль	Описание
+FILES	Связь с файлами (нельзя редактировать/удалять)
+17. tabs/entity_subtabs/bu_visibility_tab.py — Видимость БЕ
+
+Назначение: Управление видимостью сущности для разных балансовых единиц.
+
+Класс:
+BUVISibilityTab(QWidget)
+
+Вкладка управления видимостью.
+
+Политики видимости:
+Политика	Описание
+I (Individual)	Индивидуальная настройка для каждой БЕ
+A (All visible)	Видна всем БЕ
+N (All hidden)	Скрыта от всех БЕ
+
+Методы:
+Метод	Описание
+load_data()	Загрузка видимостей
+add_visibility()	Добавление новой видимости
+delete_selected()	Удаление выбранных записей
+18. tabs/class_templates_tab.py — Шаблоны классов
+
+Назначение: Определение шаблонов полей и композиций для классов сущностей. При создании сущности шаблоны автоматически применяются.
+
+Классы:
+ClassTemplatesTab(QWidget)
+
+Вкладка управления шаблонами классов.
+
+Структура:
+
+    Выпадающий список классов
+
+    Верхняя таблица: шаблоны полей
+
+    Нижняя таблица: шаблоны композиций
+
+FieldTemplateEditDialog(QDialog)
+
+Диалог редактирования шаблона поля.
+
+Поля:
+Поле	Описание
+field_name	Имя поля (латиница)
+field_type	Тип поля (C, I, N, R и т.д.)
+calias	Алиас
+nlength	Длина
+is_indexed	Индексировать
+ref_entitytype_id	Целевая сущность (для ссылок)
+ref_class_id	Класс целевой сущности (для ссылок)
+CompositionTemplateEditDialog(QDialog)
+
+Диалог редактирования шаблона композиции.
+
+Поля:
+Поле	Описание
+child_entitytype_id	Дочерняя сущность
+role_id	Роль композиции
+c_link_fieldname	Поле связи
+isortorder	Порядок
+is_required	Обязательная
+19. composition_manager.py — Менеджер композиций
+
+Назначение: Сервис для работы с композициями (создание, обновление, удаление).
+
+Класс:
+CompositionManager
+
+Управление композициями сущностей.
+
+Методы:
+Метод	Описание
+_get_entity_cname(entity_id)	Получение системного имени сущности
+ensure_ext_table_and_field(child_entity_id, link_field_name)	Создание ext-таблицы и поля
+add_composition(parent_entityid, child_entityid, role_id, link_field, sortorder)	Добавление композиции
+update_composition(comp_id, parent_entityid, child_entityid, role_id, link_field, sortorder)	Обновление композиции
+delete_composition(comp_id)	Удаление композиции
+
+Особенности:
+
+    При создании композиции автоматически:
+
+        Создаётся ext-таблица для дочерней сущности
+
+        Создаётся поле связи в meta.fields
+
+        Вызывается синхронизация p_field_sync
+
+20. tabs/users_roles_tab.py — Пользователи и роли
+
+Назначение: Управление пользователями, ролями и контекстом.
+
+Класс:
+UsersRolesTab(QWidget)
+
+Вкладка с тремя подвкладками.
+
+Подвкладки:
+
+    Пользователи (UsersTab) — список пользователей, CRUD
+
+    Роли (RolesTab) — дерево ролей + меню для выбранной роли
+
+    Контекст (ContextTab) — назначение пользователям ролей в разрезе БЕ
+
+21. tabs/user_roles/users_tab.py — Пользователи
+
+Назначение: Управление пользователями системы.
+
+Класс:
+UsersTab(QWidget)
+
+Вкладка пользователей.
+
+Поля пользователя:
+Поле	Описание
+clogin	Логин
+cpassword_hash	Хеш пароля
+lactive	Активен
+person_instanceid	Экземпляр персоны
+
+Методы:
+Метод	Описание
+load_data()	Загрузка списка пользователей
+add_user()	Добавление пользователя
+edit_user()	Редактирование пользователя
+delete_user()	Удаление пользователя
+22. tabs/user_roles/roles_tab.py — Роли
+
+Назначение: Управление ролями (иерархия, интерфейсные роли).
+
+Класс:
+RolesTab(QWidget)
+
+Вкладка ролей с деревом иерархии.
+
+Поля роли:
+Поле	Описание
+cname	Наименование
+calias	Алиас
+parentid	Родительская роль
+lisinterface	Интерфейсная роль
+cinterface_path	Путь к интерфейсу
+
+Сигнал:
+Сигнал	Описание
+role_selected(object)	Выбор роли (для загрузки меню)
+23. tabs/user_roles/context_tab.py — Контекст
+
+Назначение: Назначение пользователям ролей в разрезе балансовых единиц.
+
+Класс:
+ContextTab(QWidget)
+
+Вкладка контекста.
+
+Структура:
+Поле	Описание
+userid	Пользователь
+roleid	Роль
+balanceunitid	Балансовая единица
+
+Ограничения:
+
+    Пользователь не может иметь две интерфейсные роли в одной БЕ
+
+24. tabs/user_roles/menu_manager.py — Управление меню
+
+Назначение: Управление меню интерфейса для ролей.
+
+Класс:
+MenuManager(QWidget)
+
+Управление деревом меню.
+
+Структура меню:
+Поле	Описание
+cname	Наименование пункта
+calias	Алиас
+iformid	Ссылка на форму
+copentype	Тип открытия (main/tab/dialog)
+lisactive	Активен
+parentid	Родительский пункт
+isortorder	Порядок сортировки
+
+Методы:
+Метод	Описание
+set_role(role_id)	Установка роли и загрузка её меню
+add_menu_item()	Добавление пункта меню
+edit_menu_item()	Редактирование пункта
+delete_menu_item()	Удаление пункта (только без детей)
+move_up() / move_down()	Перемещение пунктов
+25. tabs/documents_tab.py — Документы
+
+Назначение: Управление типами документов (сущности класса DOC).
+
+Классы:
+DocumentsTab(BaseTab)
+
+Вкладка документов с тремя подвкладками.
+
+Подвкладки:
+
+    Типы документов — сущности класса DOC
+
+    Роли композиций — роли для связей
+
+    Мастер-детали — композиции с документами
+
+Методы:
+Метод	Описание
+_load_doc_types()	Загрузка типов документов
+_load_roles()	Загрузка ролей
+_load_compositions()	Загрузка композиций
+add_composition()	Добавление композиции (автоматически создаёт поле в child)
+26. tabs/relations_tab.py — Связи
+
+Назначение: Управление типами связей и правилами между сущностями.
+
+Классы:
+RelationsTab(BaseTab)
+
+Вкладка связей.
+
+Подвкладки:
+
+    Типы связей — meta.entity_ref_types
+
+    Правила — meta.entity_ref_rules
+
+RefTypeEditDialog(QDialog)
+
+Диалог редактирования типа связи.
+
+Поля:
+Поле	Описание
+calias	Алиас
+cname	Наименование
+mcomment	Комментарий
+RefRuleEditDialog(QDialog)
+
+Диалог редактирования правила.
+
+Поля:
+Поле	Описание
+reftypeid	Тип связи
+entitytypeid	Тип сущности-участника
+role_source_entityid	Источник ролей
+27. tabs/data_view_tab.py — Просмотр данных
+
+Назначение: Быстрый просмотр активных версий сущностей с данными из ext-таблиц.
+
+Класс:
+DataViewTab(BaseTab)
+
+Вкладка просмотра данных.
+
+Методы:
+Метод	Описание
+load_entity_types()	Загрузка списка сущностей
+load_data()	Загрузка данных выбранной сущности
+
+Особенности:
+
+    Использует cname (не calias) для построения имени ext-таблицы
+
+    Отображает все поля из meta.fields
+
+    Ограничение: 1000 записей
+
+28. tabs/forms_tab.py — Формы (контроллер)
+
+Назначение: Управление формами (CRUD). Контроллер вкладки форм.
+
+Класс:
+FormsTab(FormsTabUI)
+
+Контроллер вкладки форм.
+
+Методы:
+Метод	Описание
+add_form()	Добавление формы (через мастер или напрямую)
+edit_form()	Редактирование формы в дизайнере
+delete_form()	Удаление формы (с проверкой наличия элементов)
+_save_form(data, form_id)	Сохранение формы и её элементов
+_save_controls_upsert(form_id, controls, deleted_ids)	UPSERT элементов формы
+
+Особенности:
+
+    Поддерживает каскадное удаление через stored procedure meta.delete_form_elements_tree
+
+    Автоматически создаёт корневой элемент формы с id=0 в JSON
+
+29. tabs/forms_tab_ui.py — Формы (UI)
+
+Назначение: Базовый UI-компонент вкладки форм.
+
+Класс:
+FormsTabUI(QWidget)
+
+UI-компонент вкладки форм.
+
+Структура:
+
+    Кнопки: Добавить, Редактировать, Удалить
+
+    Дерево: список форм с колонками (ID, Имя, Алиас, Сущность)
+
+30. tabs/forms/form_properties_dialog.py — Диалог свойств формы
+
+Назначение: Диалог редактирования метаданных формы и визуального конструирования.
+
+Класс:
+FormPropertiesDialog(PropertyDialogUI)
+
+Диалог свойств формы.
+
+Структура:
+
+    Верхняя панель: cname, calias, сущность
+
+    Центр: визуальный дизайнер форм
+
+    Низ: кнопки Сохранить/Отмена
+
+Методы:
+Метод	Описание
+_load_data()	Загрузка данных формы
+_on_control_deleted(control_id)	Отслеживание удаления контролов
+_get_visual_designer_data()	Сбор данных из дизайнера
+get_data()	Сбор всех данных для сохранения
+31. tabs/forms/form_wizard.py — Мастер создания форм
+
+Назначение: Пошаговый мастер создания форм на основе сущности.
+
+Страницы:
+
+    Выбор сущности — выбор типа сущности
+
+    Тип формы — выбор между Grid (таблица) и Edit (карточка)
+
+    Выбор полей — выбор полей для отображения
+
+Класс:
+FormWizard(QWizard)
+
+Мастер создания форм.
+
+Результат:
+python
+
+{
+    'entity_id': int,
+    'form_type': 'grid' | 'edit',
+    'form_name': str,
+    'form_alias': str,
+    'selected_fields': List[str],
+    'is_grid': bool
+}
+
+32. tabs/forms_wizard_factory.py — Фабрика форм из мастера
+
+Назначение: Генерация JSON-структур форм на основе результатов мастера.
+
+Класс:
+FormsWizardFactory
+
+Статическая фабрика форм.
+
+Методы:
+Метод	Описание
+generate_grid_json(result, db_service)	Генерация табличной формы
+generate_edit_json(result, db_service)	Генерация карточки редактирования
+
+Grid-форма:
+
+    Создаёт один контрол типа table с колонками
+
+    Колонки настраиваются автоматически по выбранным полям
+
+Edit-форма:
+
+    Создаёт контролы для каждого выбранного поля
+
+    Автоматически определяет тип контрола по типу поля
+
+    Для ссылочных полей подставляет entity_alias
+
+33. tabs/forms/live_form_designer.py — Живая форма
+
+Назначение: Просмотр формы в режиме "живого" выполнения (без перемещения контролов).
+
+Классы:
+LiveFormDesigner(QWidget)
+
+Виджет живой формы.
+LiveFormScene(QGraphicsScene)
+
+Сцена для живой формы.
+LiveControlItem(QGraphicsProxyWidget)
+
+Графический элемент контрола на живой форме.
+
+Особенности:
+
+    Контролы не перемещаются
+
+    Поддерживает клики для выбора контрола
+
+    Масштабирование колесиком мыши (Ctrl+колёсико)
+
+34. tabs/form_elements_widget.py — Элементы формы (старый стиль)
+
+Назначение: Управление элементами формы в табличном виде (альтернатива визуальному дизайнеру).
+
+Классы:
+FormElementsWidget(QWidget)
+
+Виджет управления элементами формы.
+
+Структура:
+
+    Дерево элементов с колонками: Алиас, Тип, Источник данных
+
+    Кнопки: Добавить, Редактировать, Удалить, Вверх, Вниз
+
+ElementPropertiesDialog(QDialog)
+
+Диалог свойств элемента формы.
+
+Поля:
+Поле	Описание
+calias	Алиас контрола
+cclass	Тип контрола
+parentid	Родительский контрол
+cdatasource	Источник данных (для таблиц/комбобоксов)
+isortorder	Порядок сортировки
+mproperties_json	Дополнительные свойства (JSON)
+35. controls/form.py — Форма (рантайм)
+
+Назначение: Бизнес-форма для выполнения (загрузка/сохранение данных).
+
+Класс:
+Form(QWidget)
+
+Бизнес-форма с поддержкой данных.
+
+Свойства:
+Свойство	Описание
+form_id	ID формы
+form_alias	Алиас формы
+entity_alias	Алиас сущности
+instance_id	ID экземпляра
+is_new	Новая запись
+readonly	Только для чтения
+title	Заголовок
+is_modified	Есть изменения
+
+Методы:
+Метод	Описание
+add_control(alis, control)	Добавление контрола
+get_control(alis)	Получение контрола по алиасу
+load_data(data)	Загрузка данных в контролы
+get_data()	Сбор данных из контролов
+save()	Сохранение данных
+rollback()	Откат изменений
+on_close()	Проверка перед закрытием
+36. controls/container.py — Контейнер
+
+Назначение: Группа элементов (QGroupBox).
+
+Класс:
+MozartContainer(QGroupBox, BaseControl)
+
+Контейнер для группировки контролов.
+
+Методы:
+Метод	Описание
+set_design_mode(design_mode)	Переключение режима дизайна (рекурсивно)
+add_control(control)	Добавление контрола в контейнер
+37. controls/tab_container.py — Вкладки
+
+Назначение: Контейнер с вкладками (QTabWidget).
+
+Класс:
+MozartTabContainer(QTabWidget, BaseControl)
+
+Контейнер с вкладками.
+
+Свойства:
+Свойство	Описание
+tabs_json	JSON с настройками вкладок
+
+Методы:
+Метод	Описание
+_load_tabs()	Загрузка вкладок из JSON
+get_tab_layout(index)	Получение layout-а вкладки
+
+Формат tabs_json:
+json
+
+[
+    {"label": "Вкладка 1"},
+    {"label": "Вкладка 2"}
+]
+
+38. controls/grid.py — Таблица
+
+Назначение: Таблица для отображения данных (QTableWidget).
+
+Класс:
+MozartGrid(QWidget, BaseControl)
+
+Таблица с поддержкой фильтрации и сортировки.
+
+Свойства:
+Свойство	Описание
+columns_json	JSON с настройками колонок
+allow_filter	Разрешить фильтрацию
+allow_sort	Разрешить сортировку
+
+Методы:
+Метод	Описание
+set_data(data)	Установка данных
+refresh()	Обновление таблицы
+on_filter_changed(text)	Фильтрация данных
+get_selected()	Получение выбранной строки
+39. controls/data_source_mixin.py — Источник данных
+
+Назначение: Миксин для контролов со списками (ComboBox, ListBox, OptionGroup).
+
+Класс:
+DataSourceMixin
+
+Миксин для загрузки данных из разных источников.
+
+Типы источников:
+Тип	Описание
+static	Статический JSON-список
+entity	Данные из сущности (ext-таблица)
+query	Произвольный SQL-запрос
+
+Свойства:
+Свойство	Описание
+source_type	Тип источника
+entity_alias	Алиас сущности
+display_field	Поле для отображения
+value_field	Поле для значения
+items_json	JSON с элементами (для static)
+filter_expression	Условие фильтрации
+order_by	Сортировка
+query	SQL-запрос
+
+Методы:
+Метод	Описание
+load_items()	Загрузка данных из источника
+find_value_by_text(text)	Поиск значения по тексту
+find_text_by_value(value)	Поиск текста по значению
+40. controls/combobox.py — Выпадающий список
+
+Назначение: QComboBox с поддержкой источников данных.
+
+Класс:
+MozartComboBox(QComboBox, DataSourceMixin, BaseControl)
+
+Выпадающий список.
+
+Методы:
+Метод	Описание
+_update_control()	Обновление списка при загрузке данных
+set_value(value)	Установка значения
+get_value()	Получение значения
+41. controls/optiongroup.py — Группа радиокнопок
+
+Назначение: Группа переключателей с источником данных.
+
+Класс:
+MozartOptionGroup(QWidget, DataSourceMixin, BaseControl)
+
+Группа радиокнопок.
+
+Свойства:
+Свойство	Описание
+orientation	Ориентация (vertical/horizontal)
+
+Методы:
+Метод	Описание
+_update_control()	Создание радиокнопок
+set_value(value)	Выбор значения
+get_value()	Получение выбранного значения
+42. controls/reference_base.py — База Reference
+
+Назначение: Базовый класс для Reference с идентификацией через calias.
+
+Класс:
+MozartReferenceBase(QWidget, BaseControl)
+
+Базовый класс Reference.
+
+Особенности:
+
+    Все внутренние элементы имеют calias:
+
+        lbl_of_ref — метка
+
+        txt_of_ref — текстовое поле
+
+        btn_select_of_ref — кнопка выбора
+
+        btn_clear_of_ref — кнопка очистки
+
+Метод:
+Метод	Описание
+set_design_mode(design_mode, full_path, calias)	Переключение в режим дизайна с маскированием
+43. controls/reference_ui.py — UI Reference
+
+Назначение: Визуальное представление Reference с фиксированной геометрией.
+
+Класс:
+MozartReference(MozartReferenceBase)
+
+UI-класс Reference.
+
+Особенности:
+
+    Жёсткая фиксация размеров при инициализации
+
+    Простая подмена QLineEdit на QLabel в режиме дизайна
+
+44. widgets/reference_editor.py — Редактор ссылок
+
+Назначение: Универсальный редактор ссылок для UI (QWidget с кнопкой выбора).
+
+Класс:
+ReferenceEditor(QWidget)
+
+Редактор ссылок.
+
+Сигналы:
+Сигнал	Описание
+valueChanged(object)	Изменение значения
+
+Методы:
+Метод	Описание
+set_value(item_id, display_text)	Установка значения
+get_value()	Получение значения
+setReadOnly(ro)	Только для чтения
+select_value()	Открытие диалога выбора
+45. widgets/reference_selector.py — Селектор ссылок
+
+Назначение: Диалог выбора значения из таблицы.
+
+Класс:
+ReferenceSelector(QDialog)
+
+Диалог выбора записи.
+
+Особенности:
+
+    Поиск по полю display_field
+
+    Ограничение 200 записей
+
+    Возвращает (id, display_value)
+
+46. mozart_import/core/models.py — Модели импорта
+
+Назначение: Модели данных для подсистемы импорта.
+
+Основные классы:
+Класс	Назначение
+SourceType	Enum: FILE, DATABASE, URL
+FileFormat	Enum: JSON, XML, DBF, CSV, EXCEL
+FieldType	Enum: STRING, INTEGER, FLOAT, BOOLEAN, DATE...
+SourceField	Поле источника данных
+SourceTable	Таблица источника
+SourceSchema	Схема источника
+MatchedField	Сопоставленное поле
+MatchedEntity	Сопоставленная сущность
+MappingProposal	Предложение по маппингу
+ImportProfile	Профиль импорта
+47. mozart_import/connectors/base_connector.py — Базовый коннектор
+
+Назначение: Абстрактный базовый класс для всех коннекторов.
+
+Класс:
+BaseConnector(ABC)
+
+Абстрактный коннектор.
+
+Методы:
+Метод	Описание
+connect() -> bool	Установка соединения
+disconnect()	Закрытие соединения
+get_schema() -> SourceSchema	Получение схемы
+get_table_sample(table_name, limit) -> List[Dict]	Получение выборки данных
+iter_records(table_name, batch_size) -> Generator	Итератор по записям
+get_row_count(table_name) -> Optional[int]	Количество записей
+48. mozart_import/connectors/file_connector.py — Файловый коннектор
+
+Назначение: Коннектор для файлов (JSON, XML, DBF, CSV, Excel).
+
+Класс:
+FileConnector(BaseConnector)
+
+Коннектор для файлов.
+
+Поддерживаемые форматы:
+Формат	Библиотека	Особенности
+JSON	json	Поддерживает массивы объектов
+XML	lxml	Плоский маппинг (без вложенности)
+DBF	dbfread	Кодировка cp866/utf-8
+CSV	pandas	Разделитель автоматически
+Excel	pandas	Первый лист
+
+Методы:
+Метод	Описание
+_load_data()	Загрузка файла в память
+flatten_xml_element(elem, prefix)	Разворачивание XML в плоский словарь
+49. mozart_import/connectors/db_connector.py — Коннектор к БД
+
+Назначение: Коннектор к реляционным базам данных.
+
+Класс:
+DBConnector(BaseConnector)
+
+Коннектор для БД.
+
+Поддерживаемые СУБД:
+СУБД	Библиотека	Статус
+PostgreSQL	psycopg2	Полная поддержка
+MySQL	pymysql	Частично
+MSSQL	pyodbc	Частично
+Oracle	cx_Oracle	Частично
+SQLite	sqlite3	Полная поддержка
+50. mozart_import/core/import_orchestrator.py — Оркестратор импорта
+
+Назначение: Управление порядком импорта таблиц на основе зависимостей.
+
+Класс:
+ImportOrchestrator
+
+Оркестратор импорта.
+
+Методы:
+Метод	Описание
+_build_dependency_graph()	Построение графа зависимостей
+_order_tables(graph)	Топологическая сортировка
+run(progress_callback, progress_dialog)	Запуск импорта
+
+Особенности:
+
+    Сначала импортируются таблицы без зависимостей
+
+    Поддерживает обратную связь по прогрессу через callback
+
+    Кэширует сопоставления (sourceid → instanceid)
+
+51. mozart_import/designer/graphics_items.py — Графические элементы конструктора
+
+Назначение: Визуальные элементы для конструктора импорта.
+
+Классы:
+FieldItem(QGraphicsRectItem)
+
+Поле в таблице/сущности.
+
+Особенности:
+
+    Поддерживает чекбокс (для полей источника)
+
+    Ключевое поле подсвечивается (sourceid)
+
+NodeItem(QGraphicsRectItem)
+
+Узел (таблица/сущность) на сцене.
+
+Цвета:
+
+    Source Table: светло-зелёный (#DCFFDC)
+
+    Mozart Entity: светло-жёлтый (#FFFFC8)
+
+Методы:
+Метод	Описание
+get_checked_fields()	Получение отмеченных полей
+set_all_checked(checked)	Отметить/снять все поля
+52. mozart_import/designer/link_line.py — Линия связи
+
+Назначение: Линия между таблицей и сущностью (или между таблицами).
+
+Класс:
+LinkLine(QGraphicsLineItem)
+
+Линия связи.
+
+Цвета:
+Тип связи	Цвет
+IMPORT	Красный (#C81E1E)
+FK_SOURCE	Сине-серый (#64648C)
+COMPOSITION	Зелёный (#1E961E)
+
+Свойства:
+Свойство	Описание
+mappings	Список маппингов полей
+53. mozart_import/designer/scene_profile_adapter.py — Адаптер профиля
+
+Назначение: Преобразование между сценой конструктора и профилем импорта.
+
+Класс:
+SceneProfileAdapter
+
+Адаптер сцены и профиля.
+
+Методы:
+Метод	Описание
+scene_to_profile(scene, connector, db, editing_profile_id)	Сцена → Профиль
+restore_scene(scene, profile, mozart_entities)	Профиль → Сцена
+
+Особенности:
+
+    Автоматически добавляет маппинг для sourceid
+
+    Восстанавливает связи между таблицами источника
+
+54. mozart_import/designer/entity_creator.py — Создатель сущностей
+
+Назначение: Создание сущности Mozart на основе таблицы источника.
+
+Класс:
+EntityCreator
+
+Создатель сущностей.
+
+Методы:
+Метод	Описание
+create_entity_from_source(entity_name, entity_alias, class_id, source_table_name, checked_fields, source_sample)	Создание сущности из источника
+
+Процесс:
+
+    Создание записи в meta.entitytypes
+
+    Создание ext-таблицы
+
+    Создание полей с определением типов по образцу
+
+55. mozart_import/gui/progress_dialog.py — Диалог прогресса
+
+Назначение: Отображение прогресса импорта с двумя шкалами.
+
+Классы:
+ImportProgressDialog(QDialog)
+
+Диалог прогресса импорта.
+
+Методы:
+Метод	Описание
+start_table(table_name, total_records)	Начало импорта таблицы
+update_table_progress(processed, total)	Обновление прогресса
+finish_table(inserted, updated, errors, skipped)	Завершение таблицы
+finish_all()	Завершение всего импорта
+ImportWorker(QThread)
+
+Поток для выполнения импорта.
+56. mozart_import/wizards/import_wizard.py — Мастер импорта
+
+Назначение: Пошаговый мастер импорта данных.
+
+Страницы:
+
+    Источник (SourcePage) — выбор источника данных
+
+    Схема (SchemaPage) — просмотр схемы источника
+
+    Связи (RelationPage) — построение связей
+
+    Детали маппинга (MappingDetailPage) — настройка полей
+
+    Выполнение (ExecutePage) — запуск импорта
+
+57. utils/json_to_ui.py — Конвертер JSON → .ui
+
+Назначение: Преобразование JSON-структуры формы обратно в .ui файл для Qt Designer.
+
+Класс:
+JSONtoUIConverter
+
+Конвертер JSON → .ui.
+
+Методы:
+Метод	Описание
+convert(json_data, json_file_path, output_file_path)	Конвертация JSON в .ui
+_add_geometry(parent, geometry)	Добавление геометрии
+_add_widget(parent, widget_data)	Добавление виджета
+
+Использование:
+python
+
+json_to_ui('form.json', output_ui_path='form.ui')
+
+58. utils/ui_to_json.py — Конвертер .ui → JSON
+
+Назначение: Преобразование .ui файла в JSON для хранения в meta.forms.
+
+Класс:
+UItoJSONConverter
+
+Конвертер .ui → JSON.
+
+Методы:
+Метод	Описание
+convert(ui_file_path, xml_content)	Конвертация .ui в JSON
+_parse_widget(widget_elem)	Парсинг виджета
+
+Использование:
+python
+
+convert_ui_to_json('form.ui', output_file_path='form.json')
+
+59. utils/extract_strings.py — Извлечение строк для перевода
+
+Назначение: Извлечение всех русских строк из QMessageBox, setWindowTitle, show_error и т.д.
+
+Функция:
+extract_strings(filepath) -> list
+
+Извлечение строк из файла.
+
+Типы извлекаемых строк:
+
+    QMessageBox.information / warning / critical / question
+
+    QMessageBox.about
+
+    self.show_error / show_warning / show_info
+
+    setWindowTitle
+
+    raise Exception
+
+    print с русским текстом
+
+Выход: JSON-файл extracted_strings.json
+60. utils/migrate_strings_to_translator.py — Миграция строк
+
+Назначение: Автоматическая замена русских строк на translator.tr().
+
+Словарь замен:
+python
+
+REPLACEMENTS = {
+    '"Ошибка"': 'translator.tr("error")',
+    '"Предупреждение"': 'translator.tr("warning")',
+    '"Информация"': 'translator.tr("info")',
+    ...
+}
+
+Методы:
+Метод	Описание
+add_translator_import(content)	Добавление импорта LocalTranslator
+add_translator_instance(content)	Добавление self.translator в init
+61. utils/json_to_ui.py — Конвертер JSON → .ui
+
+Назначение: Преобразование JSON-структуры формы обратно в .ui файл для Qt Designer.
+
+Класс:
+JSONtoUIConverter
+
+Конвертер JSON → .ui.
+
+Методы:
+Метод	Описание
+convert(json_data, json_file_path, output_file_path)	Конвертация JSON в .ui
+_add_geometry(parent, geometry)	Добавление геометрии
+_add_widget(parent, widget_data)	Добавление виджета
+
+Использование:
+python
+
+json_to_ui('form.json', output_ui_path='form.ui')
+
+62. widgets/form_designer_old/resize_handle.py — Маркер ресайза
+
+Назначение: Маркер изменения размера для формы и контролов.
+
+Класс:
+ResizeHandle(QGraphicsRectItem)
+
+Маркер ресайза.
+
+Особенности:
+
+    Поддерживает групповой ресайз (несколько выделенных контролов)
+
+    Автоматическое позиционирование в правом нижнем углу
+
+    Поддержка внутренних элементов (txt_of_ref)
+
+63. widgets/form_designer_old/palette_widget.py — Палитра контролов
+
+Назначение: Палитра контролов для перетаскивания на форму.
+
+Классы:
+PaletteWidget(QWidget)
+
+Палитра контролов.
+
+Список контролов:
+Тип	Отображение
+textbox	📝 Текстовое поле
+numberbox	#️⃣ Числовое поле
+datebox	📅 Дата
+checkbox	☑ Флажок
+optiongroup	🔘 Группа радиокнопок
+memo	📄 Многострочный текст
+reference	🔗 Ссылка
+button	🔘 Кнопка
+label	🏷 Метка
+group	🗋 Группа
+grid	▦ Таблица
+DraggableLabel(QLabel)
+
+Метка для перетаскивания.
+64. widgets/form_designer_old/hierarchy_widget.py — Иерархия контролов
+
+Назначение: Дерево иерархии контролов формы.
+
+Класс:
+HierarchyWidget(QWidget)
+
+Дерево иерархии.
+
+Сигналы:
+Сигнал	Описание
+item_selected(object)	Выбор элемента в дереве
+
+Методы:
+Метод	Описание
+load_controls(controls_data)	Загрузка иерархии
+select_item(control_id)	Выделение элемента
+clear()	Очистка дерева
+65. widgets/form_designer_old/property_inspector.py — Инспектор свойств
+
+Назначение: Сканирование объектов Qt и Python для получения всех свойств.
+
+Класс:
+PropertyInspector
+
+Статический инспектор свойств.
+
+Метод:
+Метод	Описание
+inspect(obj) -> dict	Получение всех свойств объекта
+
+Что сканирует:
+
+    Нативные свойства Qt (через metaObject)
+
+    Python-переменные инстанса (self._binding_field и т.д.)
+
+Фильтрация:
+
+    Исключает служебные свойства Qt (geometry, pos, size, font, palette...)
+
+    Исключает сигналы (имеющие emit)
+
+    Исключает внутренние переменные дизайнера
+
+66. widgets/form_designer_old/toolbar_bar.py — Панель инструментов
+
+Назначение: Верхняя панель инструментов дизайнера.
+
+Класс:
+ToolBarBar(QWidget)
+
+Панель инструментов.
+
+Блоки:
+
+    Базовые действия: Сохранить, Вырезать, Копировать, Вставить
+
+    Управление сеткой: Привязка (вкл/выкл), Сетка (вкл/выкл), Размер сетки
+
+    Назначение формы: Роль формы, Сущность, Интерфейсная роль, Пункт меню
+
+Сигналы:
+Сигнал	Описание
+save_clicked	Сохранение
+cut_clicked	Вырезать
+copy_clicked	Копировать
+paste_clicked	Вставить
+form_role_changed(str)	Изменение роли формы
+entity_changed(str)	Изменение сущности
+interface_changed(int)	Изменение интерфейсной роли
+menu_item_changed(int)	Изменение пункта меню
+snap_toggled(bool)	Переключение привязки
+grid_toggled(bool)	Переключение сетки
+grid_size_changed(int)	Изменение размера сетки
+67. widgets/form_designer_old/statusbar_bar.py — Статусная строка
+
+Назначение: Статусная строка формы (подвал).
+
+Класс:
+StatusBarBar(QGraphicsWidget)
+
+Статусная строка.
+
+Отображает:
+
+    Координаты мыши относительно формы
+
+    Текущий масштаб в процентах
+
+    Статусные сообщения
+
+Кнопки:
+
+    Сетка (вкл/выкл) — с индикацией
+
+    Привязка (вкл/выкл)
+
+    Выбор шага сетки (комбобокс)
+
+68. widgets/form_designer_old/title_bar.py — Заголовок формы
+
+Назначение: Заголовок формы с кнопками управления.
+
+Классы:
+TitleBar(QGraphicsWidget)
+
+Заголовок формы.
+
+Кнопки:
+
+    Сворачивание (—)
+
+    Закрытие (✕)
+
+LayoutableButton(QGraphicsWidget)
+
+Кастомная кнопка с hover-эффектами.
+TitleText(QGraphicsWidget)
+
+Обёртка для текста заголовка.
+69. widgets/form_designer_old/focus_registry.py — Реестр фокуса
+
+Назначение: Централизованное управление фокусом для внутренних элементов Reference.
+
+Класс:
+FocusRegistry
+
+Синглтон-реестр фокуса.
+
+Методы:
+Метод	Описание
+register_focus(container_item, child_widgets)	Регистрация активного контекста
+get_active_container()	Получение активного контейнера
+get_selected_children()	Получение выбранных дочерних элементов
+reset_active_context()	Сброс контекста
+70. widgets/form_designer_old/events_panel.py — Панель событий
+
+Назначение: Привязка событий контрола к методам.
+
+Класс:
+EventsPanel(QWidget)
+
+Панель событий.
+
+Стандартные события:
+Событие	Описание
+on_click	Клик
+on_dbl_click	Двойной клик
+on_change	Изменение значения
+on_focus	Получение фокуса
+on_blur	Потеря фокуса
+on_key_press	Нажатие клавиши
+on_mouse_enter	Вход мыши
+on_mouse_leave	Выход мыши
+71. widgets/form_designer_old/methods_panel.py — Панель методов
+
+Назначение: Управление методами (скриптами) формы и контролов.
+
+Класс:
+MethodsPanel(QWidget)
+
+Панель методов.
+
+Методы:
+Метод	Описание
+set_control(control_item, calc_code)	Установка контрола и парсинг методов
+_parse_methods_from_code(calc_code)	Извлечение методов из кода
+
+Формат методов:
+python
+
+def {alias}_{method_name}(context):
+    pass
+
+72. widgets/form_designer_old/code_editor.py — Редактор кода
+
+Назначение: Диалог редактирования кода метода.
+
+Класс:
+CodeEditorDialog(QDialog)
+
+Диалог редактора кода.
+
+Методы:
+Метод	Описание
+get_code()	Получение кода
+73. tabs/forms/property_dialog_ui.py — UI диалога свойств формы
+
+Назначение: Базовый UI-класс диалога свойств формы.
+
+Класс:
+PropertyDialogUI(QDialog)
+
+Базовый UI диалога.
+
+Структура:
+
+    Верх: поля cname, calias, сущность
+
+    Центр: визуальный дизайнер форм
+
+    Низ: кнопки Сохранить/Отмена
+
+74. tabs/forms/form_utils.py — Утилиты форм
+
+Назначение: Утилитарные функции для работы с формами.
+
+Функции:
+Функция	Описание
+get_empty_form_json()	JSON пустой формы
+form_data_to_json(cname, calias, ientitytypeid, mstate_json)	Подготовка данных для сохранения
+parse_mstate(mstate_text)	Парсинг mstate_json
+create_temp_ui_file(form_json)	Создание временного .ui файла
+load_from_ui_file(ui_file_path)	Загрузка из .ui файла
+75. widgets/visual_form_editor.py — Обёртка дизайнера
+
+Назначение: Обёртка для обратной совместимости (импорт старого дизайнера).
+python
+
+from .form_designer_old.main_widget import FormDesigner as VisualFormEditor
+
+76. crud_buttons.py — Кнопки CRUD
+
+Назначение: Стандартные кнопки для CRUD-операций (Add, Edit, Delete).
+
+Класс:
+CrudButtons(QWidget)
+
+Виджет с кнопками CRUD.
+
+Сигналы:
+Сигнал	Описание
+add_clicked	Добавление
+edit_clicked	Редактирование
+delete_clicked	Удаление
+
+Методы:
+Метод	Описание
+retranslate_ui()	Обновление переводов
+77. base_manager.py — Базовый менеджер
+
+Назначение: Базовый класс для виджетов управления справочниками.
+
+Класс:
+BaseEntityManager(QWidget)
+
+Базовый менеджер сущностей.
+
+Методы:
+Метод	Описание
+load_data()	Загрузка данных из БД
+refresh_table()	Обновление таблицы
+get_selected_id()	Получение ID выбранной записи
+add_item()	Добавление
+edit_item()	Редактирование
+delete_item()	Удаление
+on_item_double_clicked(item)	Двойной клик
+78. tabs/base_tab.py — Базовая вкладка
+
+Назначение: Базовый класс для всех вкладок.
+
+Класс:
+BaseTab(QWidget)
+
+Базовая вкладка.
+
+Методы:
+Метод	Описание
+show_error(message)	Показ ошибки
+show_info(message)	Показ информации
+show_warning(message)	Показ предупреждения
+refresh()	Обновление
+retranslate_ui()	Обновление переводов
+79. tabs/balance_units_tab.py — Балансовые единицы
+
+Назначение: Управление балансовыми единицами (организации, подразделения).
+
+Классы:
+BalanceUnitsTab(BaseTab)
+
+Вкладка балансовых единиц.
+
+Структура:
+
+    Дерево иерархии БЕ
+
+    CRUD-кнопки
+
+BalanceUnitEditDialog(QDialog)
+
+Диалог редактирования БЕ.
+
+Поля:
+Поле	Описание
+cname	Наименование
+calias	Алиас
+parentid	Родительская БЕ
+lisbalanceunit	Является БЕ
+80. tabs/entity_subtabs/fields_tab.py — Поля сущности (детали)
+
+Назначение: Управление полями сущности с поддержкой системных полей.
+
+Класс:
+FieldsTab(QWidget)
+
+Вкладка полей.
+
+Особенности:
+
+    Системные поля (sourceid, data_hash) — только для просмотра
+
+    Поля в статусе PROD — нельзя редактировать/удалять
+
+    Поддержка ссылочных полей (тип R) с выбором целевой сущности
+
+81. mozart_import/dialogs/profile_manager_dialog.py — Управление профилями импорта
+
+Назначение: Диалог управления профилями импорта.
+
+Класс:
+ProfileManagerDialog(QDialog)
+
+Диалог управления профилями.
+
+Методы:
+Метод	Описание
+load_profiles()	Загрузка списка профилей
+add_profile()	Добавление профиля
+edit_profile()	Редактирование профиля
+delete_profile()	Удаление профиля
+run_import_designer(existing_profile)	Запуск конструктора импорта
+82. mozart_import/utils/ext_helper.py — Помощник ext-таблиц
+
+Назначение: Вспомогательный класс для работы с ext-таблицами.
+
+Класс:
+ExtHelper
+
+Помощник ext-таблиц.
+
+Методы:
+Метод	Описание
+get_ext_table_name(entity_alias)	Получение имени ext-таблицы
+ensure_ext_table(entity_id, entity_cname, sourceid_type)	Создание ext-таблицы
+ensure_field(entity_id, field_name, field_type, calias, ref_entity_id, ref_class_id, length)	Создание поля
+update_field_reference(field_id, new_ref_entity_id)	Обновление ссылки поля
+83. mozart_import/utils/field_creator.py — Создатель полей
+
+Назначение: Создание полей в meta.fields.
+
+Класс:
+FieldCreator
+
+Создатель полей.
+
+Метод:
+Метод	Описание
+create_fields(entity_id, fields)	Массовое создание полей
+
+Формат поля:
+python
+
+{
+    'cfieldname': str,    # Имя поля
+    'cfieldtype': str,    # Тип (C, I, N, R...)
+    'calias': str,        # Алиас
+    'nlength': int,       # Длина
+    'ndecimals': int,     # Точность
+    'lisindexed': bool,   # Индексировать
+    'ref_entitytypeid': int  # Для ссылок
+}
+
+84. mozart_import/matchers/name_matcher.py — Сопоставление по имени
+
+Назначение: Сопоставление имён таблиц и полей с использованием расстояния Левенштейна.
+
+Класс:
+NameMatcher
+
+Статический класс для сопоставления по имени.
+
+Методы:
+Метод	Описание
+similarity(a, b) -> float	Схожесть двух строк
+best_match(name, candidates, threshold) -> Tuple[str, float]	Лучшее совпадение
+85. mozart_import/matchers/type_matcher.py — Сопоставление по типу
+
+Назначение: Сопоставление типов данных источника и Mozart.
+
+Класс:
+TypeMatcher
+
+Статический класс для сопоставления типов.
+
+Маппинг:
+Тип источника	Тип Mozart
+STRING	C
+INTEGER	I
+FLOAT	N
+BOOLEAN	L
+DATE	D
+DATETIME	T
+86. mozart_import/matchers/constraint_matcher.py — Сопоставление по ограничениям
+
+Назначение: Сопоставление по ограничениям (PK, FK, уникальность).
+
+Класс:
+ConstraintMatcher
+
+Статический класс для сопоставления ограничений.
+
+Методы:
+Метод	Описание
+is_primary_key_candidate(field_name)	Проверка на PK
+is_foreign_key_candidate(field_name)	Проверка на FK
+extract_referenced_table(field_name, current_table)	Извлечение целевой таблицы
+87. tabs/user_roles/dialogs.py — Диалоги пользователей и ролей
+
+Назначение: Диалоги CRUD для пользователей, ролей, контекста и меню.
+
+Классы:
+Класс	Назначение
+UserEditDialog	Редактирование пользователя
+RoleEditDialog	Редактирование роли
+ContextEditDialog	Назначение контекста
+MenuItemEditDialog	Редактирование пункта меню
+88. ide_field_edit.py — Редактор полей
+
+Назначение: Диалог редактирования полей сущности (meta.fields).
+
+Класс:
+FieldEditDialog(QDialog)
+
+Диалог редактирования поля.
+
+Поля:
+Поле	Описание
+cfieldname	Имя поля (SQL)
+cfieldtype	Тип поля
+calias	Бизнес-алиас
+mcomment	Описание
+nlength	Длина
+ndecimals	Точность
+lisindexed	Индексировать
+ref_entitytypeid	Целевая сущность (для ссылок)
+status_id	Статус
+89. database.py — Сервис БД
+
+Назначение: Единый сервис для взаимодействия с БД.
+
+Класс:
+DatabaseService
+
+Сервис БД.
+
+Методы:
+Метод	Описание
+execute_query(sql, params, fetch)	Выполнение SQL-запроса
+execute_procedure(proc_name, params)	Вызов хранимой процедуры
+get_connection()	Получение соединения
+refresh_connection()	Обновление соединения
+90. ide_ui_panels.py — UI-панели главного окна
+
+Назначение: Миксин с UI-компонентами панелей главного окна.
+
+Класс:
+MozartIDEPanelsMixin
+
+Миксин панелей IDE.
+
+Методы:
+Метод	Описание
+retranslate_ui()	Обновление переводов
+_create_left_panel()	Создание левой панели
+_create_right_panel()	Создание правой панели
+_update_connection_fields()	Обновление полей подключения
+connect_to_db()	Подключение к БД
+open_db_work()	Открытие диалога БД
+about()	Окно "О программе"
+91. lang/translator.py — Переводчик (PostgreSQL)
+
+Назначение: Управление переводами с хранением в PostgreSQL.
+
+Класс:
+Translator
+
+Синглтон-переводчик.
+
+Методы:
+Метод	Описание
+_load_all()	Загрузка всех переводов в кэш
+set_language(lang_code)	Установка языка
+tr(key)	Получение перевода
+refresh()	Обновление кэша
+92. utils/mozart_crypto_core.py — Криптоядро
+
+Назначение: Постквантовая криптография на основе LWE (Learning With Errors).
+
+Класс:
+MozartCryptoEngine
+
+Криптоядро Mozart.
+
+Параметры:
+Параметр	Описание
+P	Модуль поля Галуа (257)
+N_FREQ	Количество частот (128)
+N_TIME	Количество временных слотов (100)
+TAU_THRESHOLD	Порог гладкости (45.0)
+
+Методы:
+Метод	Описание
+select_stochastic_track()	Выбор случайного аудиотрека
+generate_carrier_from_file(file_path, sl_seed)	Генерация носителя из аудио
+generate_keypair()	Генерация ключевой пары
+encapsulate_key(matrix_A, symmetric_key, file_path, sl_seed)	Шифрование ключа
+calculate_surface_tau(matrix)	Расчёт гладкости
+decapsulate_and_verify(...)	Дешифрация и верификация
+93. utils/mozart_nodes.py — Узлы Вася и Петя
+
+Назначение: Реализация протокола обмена между Васей (сервер) и Петей (клиент).
+
+Классы:
+VasyaServer
+
+Серверная сторона.
+
+Методы:
+Метод	Описание
+receive_handshake_and_encrypt(public_key_A)	Приём рукопожатия и шифрование
+PetyaClient
+
+Клиентская сторона.
+
+Методы:
+Метод	Описание
+init_session_keys(target_key_len)	Инициализация ключей
+receive_and_analyze(packet_b, sl_seed, use_hacked_key)	Приём и анализ пакета
+94. utils/main_verification.py — Верификация протокола
+
+Назначение: Стенд проверки криптографического протокола.
+
+Функция:
+run_pankratov_protocol_test()
+
+Запуск теста протокола.
+
+Сценарии:
+
+    Легитимный обмен — успешная дешифрация
+
+    Атака — дефектный ключ, обнаружение какофонии
+
+95. utils/main_verification_optimized.py — Оптимизированная верификация
+
+Назначение: Оптимизированная версия верификации с визуализацией носителей.
+
+Особенности:
+
+    Сохранение матриц носителей как изображений
+
+    Расчёт тау для каждого носителя
+
+    Сравнительная статистика
+
+96. utils/music_evaluator.py — Оценка музыкальности
+
+Назначение: Оценка музыкальности аудиофайлов по методу Панкратова (тау-критерий).
+
+Класс:
+MusicEvaluator
+
+Оценщик музыкальности.
+
+Шкала музыкальности:
+Тау	Оценка
+0-10	🎵 ГЕНИАЛЬНО
+10-20	🎶 ПРЕКРАСНО
+20-30	🎵 ХОРОШО
+30-40	👍 НОРМАЛЬНО
+40-45	🤔 НА ГРАНИ
+45-60	⚠️ СОМНИТЕЛЬНО
+60-80	😬 НЕРВНО
+80-100	🤯 РАЗРЫВ
+100-200	💥 КАКОФОНИЯ
+200+	🔥 ХАОС
+97. utils/tensor_crypto.py — Тензорная криптография
+
+Назначение: Постквантовая криптография на основе 3-тензоров.
+
+Классы:
+Класс	Назначение
+GFp	Элемент поля Галуа
+Matrix	Матрица над GF(p)
+Tensor3	3-тензор над GF(p)
+
+Параметры:
+Параметр	Описание
+P	65521 (простое число)
+N	16 (размерность тензора)
+98. utils/tensor_crypto_cell.py — Ячейка тензорной криптографии
+
+Назначение: Гибридная криптосистема: TensorLWE + AES-GCM.
+
+Класс:
+TensorLWE
+
+Реализация TensorLWE.
+
+Методы:
+Метод	Описание
+encrypt_bit(bit, A, B)	Шифрование бита
+decrypt_bit(U, V)	Дешифрация бита
+encrypt_bytes(data, A, B)	Шифрование байтов
+decrypt_bytes(cipher)	Дешифрация байтов
+99. utils/visual6.py — Гибридный конструктор Панкратова
+
+Назначение: Визуализация гибридной криптосистемы с тотальной модуляцией.
+
+Особенности:
+
+    Использует поле Галуа (P=257)
+
+    Степень Фробениуса (E=7)
+
+    Создаёт три аудио-файла:
+
+        Анонимная маска
+
+        Аутентичный восстановленный
+
+        Дефектный (брак)
+
+100. utils/DumpPSTGRE/db_backup_tool.py — Инструмент бэкапа БД
+
+Назначение: Визуальный инструмент для создания дампа структуры PostgreSQL.
+
+Класс:
+DbBackupToolWidget(QWidget)
+
+Виджет для бэкапа БД.
+
+Особенности:
+
+    Дерево объектов БД (схемы, таблицы, процедуры, функции, вьюхи)
+
+    Чекбоксы для выбора объектов
+
+    Генерация SQL-дампа
+
+101. utils/DumpPSTGRE/db_backup_extractor.py — Экстрактор БД
+
+Назначение: Извлечение структуры и данных из PostgreSQL.
+
+Класс:
+DbBackupExtractor
+
+Экстрактор БД.
+
+Методы:
+Метод	Описание
+fetch_db_structure()	Получение структуры БД
+generate_dump(file_path, dump_config)	Генерация дампа
+102. utils/ DmpPyton/project_packer.py — Упаковщик проекта
+
+Назначение: Инструмент для создания JSON-дампа и архивации файлов проекта.
+
+Класс:
+ProjectPackerWidget(QWidget)
+
+Виджет упаковщика проекта.
+
+Особенности:
+
+    Дерево проекта с чекбоксами
+
+    Сохранение состояния в SQLite
+
+    Два режима:
+
+        Создание Mozart.json (содержимое файлов)
+
+        Копирование структуры каталогов
+
+103. utils/makeJsonPrj.py — Создание JSON проекта
+
+Назначение: Скрипт для создания JSON-дампа всех .py файлов проекта.
+
+Использование:
+bash
+
+python makeJsonPrj.py
+
+Выход:
+
+    project_dump.json — все .py файлы в виде JSON-дерева
+
+    configurate_archive.pdf — PDF с листингами кода
+
+104. utils/makeJsonDBStruck.py — Дамп структуры БД в JSON
+
+Назначение: Скрипт для выгрузки полной структуры PostgreSQL в JSON.
+
+Выход:
+
+    Таблицы, представления, процедуры, функции
+
+    Триггеры, индексы, последовательности
+
+    Комментарии (опционально)
+
+    Данные (выборочно)
+
+105. utils/makeDbPdf.py — Структура БД в PDF
+
+Назначение: Генерация PDF-документа со структурой PostgreSQL.
+
+Особенности:
+
+    Поддержка кириллицы (DejaVuSans)
+
+    Индексы, PK, FK, комментарии
+
+    Выборочные данные (опционально)
+
+106. utils/SysMakeBackup.py — Системный бэкап БД
+
+Назначение: Создание бэкапа PostgreSQL через pg_dump.
+
+Использование:
+bash
+
+python SysMakeBackup.py
+
+107. utils/SYSrestoreBase.py — Восстановление БД
+
+Назначение: Восстановление бэкапа PostgreSQL через pg_restore.
+108. utils/insAccauntBal.py — Импорт планов счетов
+
+Назначение: Импорт планов счетов (РСБУ и МСФО) из JSON-файлов.
+109. utils/view_sqlite.py — Просмотрщик SQLite
+
+Назначение: Визуальный просмотрщик SQLite-баз.
+110. utils/openDBF.py — Просмотрщик DBF
+
+Назначение: Визуальный просмотрщик DBF-файлов.
+111. fix_all_imports.py, fix_missing_imports.py, fix_qaction_imports.py
+
+Назначение: Скрипты для автоматического исправления импортов при миграции с PyQt5 на PySide6.
+112. migrate_to_pyside6.py — Миграция на PySide6
+
+Назначение: Автоматическая замена PyQt5 → PySide6 во всех файлах проекта.
+🎯 ИТОГОВАЯ СТАТИСТИКА
+Показатель	Количество
+Всего файлов	224
+Классов	~200+
+Методов	~1000+
+Контролов	15
+Вкладок	9
+Подвкладок	5
+🚀 РЕКОМЕНДАЦИИ ПО ДАЛЬНЕЙШЕМУ РАЗВИТИЮ
+
+    Документация:
+
+        Добавить UML-диаграммы
+
+        Описать API для интеграции
+
+        Создать руководство пользователя
+
+    Тестирование:
+
+        Написать unit-тесты для ключевых модулей
+
+        Добавить интеграционные тесты
+
+    Оптимизация:
+
+        Ускорить загрузку форм
+
+        Оптимизировать запросы к БД
+
+        Добавить кэширование
+
+    Новые функции:
+
+        Поддержка аудита изменений
+
+        Экспорт/импорт форм (XML/JSON)
+
+        Генерация кода по формам
+
+Вот и вся документация! 🎵 Если нужны ещё детали по какому-то конкретному модулю или классу — спрашивай, я продолжу петь.
+This response is AI-generated, for reference only.
+

@@ -1,17 +1,22 @@
 # mozart_import/designer/designer_main.py
 # -*- coding: utf-8 -*-
-
 import json
-from PySide6.QtWidgets import (QTreeWidgetItem, QPushButton, QMessageBox, QDialog, from PySide6.QtGui import QAction                              QFormLayout, QLineEdit, QComboBox, QDialogButtonBox,                              QTableWidget, QTableWidgetItem, QHeaderView, QMenu,                              QTabWidget, QProgressDialog, QHBoxLayout,                              QLabel, QCheckBox, QSpinBox, QFrame)
+from PySide6.QtWidgets import (
+    QTreeWidgetItem, QPushButton, QMessageBox, QDialog,
+    QFormLayout, QLineEdit, QComboBox, QDialogButtonBox,
+    QTableWidget, QTableWidgetItem, QHeaderView, QMenu,
+    QTabWidget, QProgressDialog, QHBoxLayout,
+    QLabel, QCheckBox, QSpinBox, QFrame
+)
+from PySide6.QtGui import QAction
 from PySide6.QtCore import Qt
 from database import DatabaseService
 from lang.local_translator import LocalTranslator
-from ..core.models import (SourceTable, SourceField, FieldType, ImportProfile,
-                           SourceType, MappingProposal, MatchedEntity, MatchedField)
-from ..utils.field_creator import FieldCreator
-from ..core.import_engine import ImportEngine
+from ..core.models import ImportProfile, SourceType, FileFormat
 from ..core.profile_manager import ProfileManager
-from .designer_mass_field_dialog import MassFieldDialog
+from .designer_trees import SourceTreeManager, MozartTreeManager
+from .designer_links import ImportLinksManager
+from .designer_import import ImportOperations
 
 
 class ImportDesigner(QMainWindow):

@@ -8,7 +8,7 @@ from database import DatabaseService
 from tabs import (
     BalanceUnitsTab, UsersRolesTab, EntitiesTab,
     DocumentsTab, DataViewTab, RelationsTab, ImportTab,
-    ClassTemplatesTab, FormsTab
+    ClassTemplatesTab, FormsTab, EntityClassesTab  # ДОБАВЛЕН ИМПОРТ
 )
 from lang.local_translator import LocalTranslator
 
@@ -33,7 +33,8 @@ class DBWorkDialog(QDialog):
         self.tabs.addTab(RelationsTab(self, db=self.db), self.translator.tr('tab_relations'))
         self.tabs.addTab(ImportTab(self, db=self.db), self.translator.tr('tab_import'))
         self.tabs.addTab(ClassTemplatesTab(self, db=self.db), self.translator.tr('tab_class_templates'))
-        self.tabs.addTab(FormsTab(self, db=self.db), self.translator.tr('tab_forms'))  # Новая вкладка
+        self.tabs.addTab(FormsTab(self, db=self.db), self.translator.tr('tab_forms'))
+        self.tabs.addTab(EntityClassesTab(self, db=self.db), self.translator.tr('tab_entity_classes'))  # НОВАЯ ВКЛАДКА
 
         layout.addWidget(self.tabs)
 
@@ -53,7 +54,8 @@ class DBWorkDialog(QDialog):
         self.tabs.setTabText(5, self.translator.tr('tab_relations'))
         self.tabs.setTabText(6, self.translator.tr('tab_import'))
         self.tabs.setTabText(7, self.translator.tr('tab_class_templates'))
-        self.tabs.setTabText(8, self.translator.tr('tab_forms'))  # Новая вкладка
+        self.tabs.setTabText(8, self.translator.tr('tab_forms'))
+        self.tabs.setTabText(9, self.translator.tr('tab_entity_classes'))  # НОВАЯ ВКЛАДКА
         self.btn_close.setText(self.translator.tr('btn_close'))
 
         for i in range(self.tabs.count()):

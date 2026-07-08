@@ -2,7 +2,14 @@
 # -*- coding: utf-8 -*-
 
 import json
-from PySide6.QtWidgets import (QTreeWidgetItem, QPushButton, QMessageBox, QDialog, from PySide6.QtGui import QAction                              QFormLayout, QLineEdit, QComboBox, QDialogButtonBox,                              QTableWidget, QTableWidgetItem, QHeaderView, QMenu,                              QTabWidget, QProgressDialog, QHBoxLayout,                              QLabel, QCheckBox, QSpinBox, QFrame)
+from PySide6.QtWidgets import (
+    QTreeWidgetItem, QPushButton, QMessageBox, QDialog,
+    QFormLayout, QLineEdit, QComboBox, QDialogButtonBox,
+    QTableWidget, QTableWidgetItem, QHeaderView, QMenu,
+    QTabWidget, QProgressDialog, QHBoxLayout,
+    QLabel, QCheckBox, QSpinBox, QFrame
+)
+from PySide6.QtGui import QAction
 from PySide6.QtCore import Qt
 from database import DatabaseService
 from lang.local_translator import LocalTranslator

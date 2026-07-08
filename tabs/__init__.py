@@ -1,4 +1,4 @@
-# /home/sergey/Documents/configurate/tabs/__init__.py
+# Полный путь: tabs/__init__.py
 # -*- coding: utf-8 -*-
 
 from .balance_units_tab import BalanceUnitsTab
@@ -10,6 +10,7 @@ from .relations_tab import RelationsTab
 from .import_tab import ImportTab
 from .class_templates_tab import ClassTemplatesTab
 from .forms_tab import FormsTab
+from .entity_classes_tab import EntityClassesTab  # НОВЫЙ ИМПОРТ
 
 __all__ = [
     'BalanceUnitsTab',
@@ -20,5 +21,6 @@ __all__ = [
     'RelationsTab',
     'ImportTab',
     'ClassTemplatesTab',
-    'FormsTab'
+    'FormsTab',
+    'EntityClassesTab'  # НОВЫЙ
 ]
