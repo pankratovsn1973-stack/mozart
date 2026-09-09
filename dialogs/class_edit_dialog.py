@@ -1,5 +1,4 @@
 # Полный путь: dialogs/class_edit_dialog.py
-# dialogs/class_edit_dialog.py
 # -- coding: utf-8 --
 """
 Главное окно редактирования структуры класса ERP.
