@@ -1,10 +1,9 @@
 # -*- coding: utf-8 -*-
 # /home/sergey/Documents/configurate/controls/image_view.py
-
+# -- coding: utf-8 --
 from PySide6.QtWidgets import QWidget, QVBoxLayout, QLabel, QPushButton, QFileDialog, QHBoxLayout
 from PySide6.QtCore import Property, Qt
 from PySide6.QtGui import QPixmap
-
 from .base_control import BaseControl
 
 
@@ -14,17 +13,21 @@ class MozartImageView(QWidget, BaseControl):
         BaseControl.__init__(self)
         self._label = ""
         self._value = None
+
         layout = QVBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
+
         self.image_label = QLabel()
-        self.image_label.setAlignment(Qt.AlignCenter)
+        self.image_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.image_label.setFixedHeight(150)
         self.image_label.setStyleSheet("border: 1px solid gray; background-color: #f0f0f0;")
         layout.addWidget(self.image_label)
+
         btn_layout = QHBoxLayout()
         self.btn_select = QPushButton("Выбрать файл...")
         self.btn_select.clicked.connect(self.select_file)
         btn_layout.addWidget(self.btn_select)
+
         self.btn_clear = QPushButton("Очистить")
         self.btn_clear.clicked.connect(self.clear_image)
         btn_layout.addWidget(self.btn_clear)
@@ -53,8 +56,8 @@ class MozartImageView(QWidget, BaseControl):
         scaled = pixmap.scaled(
             self.image_label.width() - 10,
             self.image_label.height() - 10,
-            Qt.KeepAspectRatio,
-            Qt.SmoothTransformation
+            Qt.AspectRatioMode.KeepAspectRatio,
+            Qt.TransformationMode.SmoothTransformation
         )
         self.image_label.setPixmap(scaled)
 

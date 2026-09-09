@@ -1,10 +1,9 @@
 # -*- coding: utf-8 -*-
 # /home/sergey/Documents/configurate/controls/grid.py
-
+# -- coding: utf-8 --
 import json
 from PySide6.QtWidgets import QWidget, QVBoxLayout, QLineEdit, QTableWidget, QTableWidgetItem, QHBoxLayout, QLabel
 from PySide6.QtCore import Property, Qt
-
 from .base_control import BaseControl
 
 
@@ -23,6 +22,7 @@ class MozartGrid(QWidget, BaseControl):
     def init_ui(self):
         layout = QVBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
+
         filter_layout = QHBoxLayout()
         filter_layout.addWidget(QLabel("Фильтр:"))
         self.filter_edit = QLineEdit()
@@ -30,16 +30,18 @@ class MozartGrid(QWidget, BaseControl):
         self.filter_edit.textChanged.connect(self.on_filter_changed)
         filter_layout.addWidget(self.filter_edit)
         layout.addLayout(filter_layout)
+
         self.table = QTableWidget()
-        self.table.setSelectionBehavior(QTableWidget.SelectRows)
-        self.table.setEditTriggers(QTableWidget.NoEditTriggers)
+        self.table.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)
+        self.table.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
         self.table.setSortingEnabled(True)
         layout.addWidget(self.table)
+
         self.filter_edit.setVisible(self._allow_filter)
 
     def set_design_mode(self, design_mode):
         self.filter_edit.setEnabled(not design_mode)
-        self.table.setEditTriggers(QTableWidget.NoEditTriggers)
+        self.table.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
 
     @Property(str)
     def binding_field(self):
@@ -72,7 +74,7 @@ class MozartGrid(QWidget, BaseControl):
     @is_readonly.setter
     def is_readonly(self, value):
         self._is_readonly = value
-        self.table.setEditTriggers(QTableWidget.NoEditTriggers if value else QTableWidget.DoubleClicked)
+        self.table.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers if value else QTableWidget.EditTrigger.DoubleClicked)
 
     @Property(str)
     def columns_json(self):
@@ -109,7 +111,7 @@ class MozartGrid(QWidget, BaseControl):
                 self.table.setHorizontalHeaderItem(i, QTableWidgetItem(col.get('header', col.get('field', ''))))
                 if col.get('width'):
                     self.table.setColumnWidth(i, col['width'])
-        except:
+        except Exception:
             pass
 
     @property
@@ -162,7 +164,7 @@ class MozartGrid(QWidget, BaseControl):
         self.table.setRowCount(len(self._filtered_data))
         try:
             columns = json.loads(self._columns_json)
-        except:
+        except Exception:
             columns = []
         for row, item in enumerate(self._filtered_data):
             for col_idx, col in enumerate(columns):
@@ -178,7 +180,7 @@ class MozartGrid(QWidget, BaseControl):
             self._filtered_data = []
             try:
                 columns = json.loads(self._columns_json)
-            except:
+            except Exception:
                 columns = []
             for item in self._data:
                 match = False
@@ -194,7 +196,7 @@ class MozartGrid(QWidget, BaseControl):
 
     def get_selected(self):
         current_row = self.table.currentRow()
-        if current_row >= 0 and current_row < len(self._filtered_data):
+        if 0 <= current_row < len(self._filtered_data):
             return self._filtered_data[current_row]
         return None
 

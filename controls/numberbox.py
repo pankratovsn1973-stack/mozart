@@ -1,14 +1,15 @@
 # -*- coding: utf-8 -*-
 # /home/sergey/Documents/configurate/controls/numberbox.py
-
+# -- coding: utf-8 --
 from PySide6.QtWidgets import QLineEdit
-from PySide6.QtCore import Property, Qt, QLocale
+from PySide6.QtCore import Property, Qt, QLocale, Signal
 from PySide6.QtGui import QDoubleValidator
-
 from .base_control import BaseControl
 
 
 class MozartNumberBox(QLineEdit, BaseControl):
+    value_changed = Signal(object)
+
     def __init__(self, parent=None):
         QLineEdit.__init__(self, parent)
         BaseControl.__init__(self)
@@ -16,7 +17,7 @@ class MozartNumberBox(QLineEdit, BaseControl):
         self._max_value = 999999999.0
         self._decimal_places = 2
         self._label = ""
-        self.setAlignment(Qt.AlignRight)
+        self.setAlignment(Qt.AlignmentFlag.AlignRight)
         self._update_validator()
         self.textChanged.connect(self._on_text_changed)
 
@@ -29,8 +30,8 @@ class MozartNumberBox(QLineEdit, BaseControl):
 
     def _update_validator(self):
         validator = QDoubleValidator(self._min_value, self._max_value, self._decimal_places, self)
-        validator.setNotation(QDoubleValidator.StandardNotation)
-        validator.setLocale(QLocale(QLocale.English))
+        validator.setNotation(QDoubleValidator.Notation.StandardNotation)
+        validator.setLocale(QLocale(QLocale.Language.English))
         self.setValidator(validator)
 
     def set_design_mode(self, design_mode):
@@ -141,7 +142,7 @@ class MozartNumberBox(QLineEdit, BaseControl):
         if value is not None:
             try:
                 self.setText(f"{float(value):.{self._decimal_places}f}")
-            except:
+            except Exception:
                 self.setText("")
         else:
             self.setText("")

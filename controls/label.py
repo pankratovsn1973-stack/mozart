@@ -1,9 +1,8 @@
 # -*- coding: utf-8 -*-
 # /home/sergey/Documents/configurate/controls/label.py
-
+# -- coding: utf-8 --
 from PySide6.QtWidgets import QLabel
 from PySide6.QtCore import Property, Qt
-
 from .base_control import BaseControl
 
 
@@ -20,11 +19,12 @@ class MozartLabel(QLabel, BaseControl):
 
     def _apply_style(self):
         if self._text_alignment == "left":
-            self.setAlignment(Qt.AlignLeft | Qt.AlignVCenter)
+            self.setAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter)
         elif self._text_alignment == "center":
-            self.setAlignment(Qt.AlignCenter)
+            self.setAlignment(Qt.AlignmentFlag.AlignCenter)
         elif self._text_alignment == "right":
-            self.setAlignment(Qt.AlignRight | Qt.AlignVCenter)
+            self.setAlignment(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter)
+
         font = self.font()
         font.setBold(self._bold)
         if self._font_size > 0:

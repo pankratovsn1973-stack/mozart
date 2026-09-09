@@ -1,10 +1,9 @@
 # -*- coding: utf-8 -*-
 # /home/sergey/Documents/configurate/controls/tab_container.py
-
+# -- coding: utf-8 --
 import json
 from PySide6.QtWidgets import QTabWidget, QWidget, QVBoxLayout
 from PySide6.QtCore import Property
-
 from .base_control import BaseControl
 
 
@@ -75,7 +74,7 @@ class MozartTabContainer(QTabWidget, BaseControl):
                 tab_layout = QVBoxLayout(tab_widget)
                 self.addTab(tab_widget, tab_label)
                 setattr(tab_widget, '_tab_layout', tab_layout)
-        except:
+        except Exception:
             pass
 
     def get_tab_layout(self, index):

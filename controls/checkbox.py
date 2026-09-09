@@ -1,13 +1,14 @@
 # -*- coding: utf-8 -*-
 # /home/sergey/Documents/configurate/controls/checkbox.py
-
+# -- coding: utf-8 --
 from PySide6.QtWidgets import QCheckBox
-from PySide6.QtCore import Property, Qt
-
+from PySide6.QtCore import Property, Qt, Signal
 from .base_control import BaseControl
 
 
 class MozartCheckBox(QCheckBox, BaseControl):
+    value_changed = Signal(bool)
+
     def __init__(self, parent=None):
         QCheckBox.__init__(self, parent)
         BaseControl.__init__(self)
@@ -16,8 +17,8 @@ class MozartCheckBox(QCheckBox, BaseControl):
         self.stateChanged.connect(self._on_state_changed)
 
     def _on_state_changed(self, state):
-        self._is_dirty = (state == Qt.Checked) != self._original_value
-        self.value_changed.emit(state == Qt.Checked)
+        self._is_dirty = (state == Qt.CheckState.Checked) != self._original_value
+        self.value_changed.emit(state == Qt.CheckState.Checked)
 
     def _apply_readonly(self):
         self.setEnabled(not self._is_readonly)

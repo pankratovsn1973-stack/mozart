@@ -1,13 +1,14 @@
 # -*- coding: utf-8 -*-
 # /home/sergey/Documents/configurate/controls/memo.py
-
+# -- coding: utf-8 --
 from PySide6.QtWidgets import QPlainTextEdit
-from PySide6.QtCore import Property
-
+from PySide6.QtCore import Property, Signal
 from .base_control import BaseControl
 
 
 class MozartMemo(QPlainTextEdit, BaseControl):
+    value_changed = Signal(str)
+
     def __init__(self, parent=None):
         QPlainTextEdit.__init__(self, parent)
         BaseControl.__init__(self)

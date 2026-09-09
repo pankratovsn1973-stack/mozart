@@ -1,5 +1,5 @@
 # Полный путь: dialogs/collection_manager.py
-# -*- coding: utf-8 -*-
+# -- coding: utf-8 --
 """
 Менеджер коллекции элементов сцены редактора классов.
 Хранит в памяти ВСЕ состояние сцены: данные элементов и их графические представления.
@@ -7,200 +7,219 @@
 перемещения, ресайза и удаления.
 Использует отрицательные ID (-1, -2...) для новых объектов до сохранения в БД.
 Не зависит от UI, является чистой in-memory моделью состояния.
-"""
 
-from typing import Dict, List, Set, Optional, Any
+Все поля приватные (_prefix). Внешний доступ — только через публичные методы с валидацией.
+"""
+isDebug = 1  # 1 = печатать отладочные принты, 0 = тихо
+
+from typing import Dict, List, Set, Optional, Any, Tuple
 from PySide6.QtCore import QRectF
 from PySide6.QtWidgets import QGraphicsItem
 
 
 class CollectionManager:
     """
-    Централизованное хранилище состояния сцены.
-
-    Свойства:
-    - elements: Dict[int, Dict] - Данные элементов (ключ = ID из БД или отрицательный).
-      Структура значения: {id, parent_id, calias, cclass, x, y, width, height, properties, is_new}
-    - graphics_items: Dict[int, QGraphicsItem] - Графические объекты на сцене.
-      Ключ соответствует ключу в elements. Позволяет управлять графикой напрямую по ID.
-    - selected_ids: Set[int] - Набор ID выделенных элементов.
-    - deleted_ids: Set[int] - Набор ID элементов, помеченных на удаление.
-    - next_id: int - Счетчик генерации отрицательных ID (начинается с -1).
-
-    Методы:
-    - add_element(element_data, graphic_item) -> int : Добавление элемента и его графики.
-    - link_graphic_item(element_id, graphic_item) : Привязка графики к существующему элементу.
-    - get_element(element_id) -> Optional[Dict] : Получение данных по ID.
-    - get_graphic_item(element_id) -> Optional[QGraphicsItem] : Получение графики по ID.
-    - update_element_data(element_id, data) : Обновление данных и синхронизация графики.
-    - remove_element(element_id) : Удаление элемента и его графики со сцены.
-    - select_element(element_id, additive) : Управление выделением.
-    - clear_selection() : Сброс выделения.
-    - move_selected(dx, dy) : Перемещение всех выделенных элементов (данные + графика).
-    - resize_selected(dw, dh) : Изменение размера выделенных элементов.
-    - delete_selected() : Удаление всех выделенных элементов.
-    - align_selected(alignment) : Выравнивание выделенных ('top', 'left' и т.д.).
-    - equalize_sizes() : Приведение размеров выделенных к последнему выбранному.
-    - get_inserts() -> List[Dict] : Список элементов для INSERT (ID < 0).
-    - get_updates() -> List[Dict] : Список элементов для UPDATE (ID > 0).
-    - get_deletes() -> List[int] : Список ID для физического удаления.
+    Централизованное хранилище состояния сцены с защищённым API.
     """
 
     def __init__(self):
-        self.elements: Dict[int, Dict] = {}
-        self.graphics_items: Dict[int, QGraphicsItem] = {}
-        self.selected_ids: Set[int] = set()
-        self.deleted_ids: Set[int] = set()
-        self.next_id: int = -1
+        self._elements: Dict[int, Dict] = {}
+        self._graphics_items: Dict[int, QGraphicsItem] = {}
+        self._selected_ids: Set[int] = set()
+        self._deleted_ids: Set[int] = set()
+        self._next_id: int = -1
+        self._active_container_id: Optional[int] = None
+        self._last_selected_id: Optional[int] = None
+
+    # =========================================================================
+    # READ-ONLY СВОЙСТВА
+    # =========================================================================
+
+    @property
+    def selected_ids(self) -> frozenset:
+        return frozenset(self._selected_ids)
+
+    @property
+    def elements_count(self) -> int:
+        return len(self._elements)
+
+    @property
+    def active_container_id(self) -> Optional[int]:
+        return self._active_container_id
+
+    @property
+    def last_selected_id(self) -> Optional[int]:
+        return self._last_selected_id
+
+    # =========================================================================
+    # БЕЗОПАСНОЕ ЧТЕНИЕ
+    # =========================================================================
+
+    def get_element(self, element_id: int) -> Optional[Dict]:
+        elem = self._elements.get(element_id)
+        return dict(elem) if elem else None
+
+    def get_graphic_item(self, element_id: int) -> Optional[QGraphicsItem]:
+        return self._graphics_items.get(element_id)
+
+    def get_selected_elements(self) -> List[Dict]:
+        return [dict(self._elements[eid]) for eid in self._selected_ids if eid in self._elements]
+
+    def get_last_selected(self) -> Optional[Dict]:
+        if not self._last_selected_id:
+            return None
+        elem = self._elements.get(self._last_selected_id)
+        return dict(elem) if elem else None
+
+    # =========================================================================
+    # УПРАВЛЕНИЕ ЭЛЕМЕНТАМИ
+    # =========================================================================
 
     def add_element(self, element_data: Dict, graphic_item: Optional[QGraphicsItem] = None) -> int:
-        """
-        Добавляет новый элемент в коллекцию и присваивает ему отрицательный ID.
-
-        Args:
-            element_data: Словарь свойств элемента (без поля 'id').
-            graphic_item: Опциональная ссылка на QGraphicsItem. Если передана, сразу регистрируется.
-
-        Returns:
-            int: Присвоенный отрицательный ID.
-        """
-        new_id = self.next_id
-        self.next_id -= 1
-
-        # Сохраняем данные
+        new_id = self._next_id
+        self._next_id -= 1
         data_copy = dict(element_data)
         data_copy['id'] = new_id
         data_copy['is_new'] = True
-        self.elements[new_id] = data_copy
-
-        # Сразу связываем графику, если она есть
+        self._elements[new_id] = data_copy
         if graphic_item is not None:
-            self.graphics_items[new_id] = graphic_item
-
+            self._graphics_items[new_id] = graphic_item
         return new_id
 
     def link_graphic_item(self, element_id: int, graphic_item: QGraphicsItem):
-        """
-        Связывает существующий элемент данных с его графическим представлением.
-        Используется при загрузке из БД, когда сначала создаются данные, а потом рендерится сцена.
+        if element_id in self._elements:
+            self._graphics_items[element_id] = graphic_item
 
-        Args:
-            element_id: ID элемента в коллекции.
-            graphic_item: Объект QGraphicsItem на сцене.
-        """
-        if element_id in self.elements:
-            self.graphics_items[element_id] = graphic_item
-
-    def get_element(self, element_id: int) -> Optional[Dict]:
-        """Возвращает словарь данных элемента по ID."""
-        return self.elements.get(element_id)
-
-    def get_graphic_item(self, element_id: int) -> Optional[QGraphicsItem]:
-        """Возвращает графический объект по ID. Критично для операций над сценой."""
-        return self.graphics_items.get(element_id)
-
-    def update_element_data(self, element_id: int, data: Dict):
-        """
-        Обновляет данные элемента и автоматически применяет изменения к графике, если она существует.
-
-        Args:
-            element_id: ID элемента.
-            data: Словарь обновляемых полей (x, y, width, height и др.).
-        """
-        if element_id in self.elements:
-            self.elements[element_id].update(data)
-
-            # Синхронизация графики
-            item = self.graphics_items.get(element_id)
+    def update_element_data(self, element_id: int, data: Dict, from_graphics: bool = False):
+        if element_id not in self._elements:
+            return
+        self._elements[element_id].update(data)
+        if not from_graphics:
+            item = self._graphics_items.get(element_id)
             if item and hasattr(item, 'set_geometry'):
-                x = data.get('x', self.elements[element_id].get('x'))
-                y = data.get('y', self.elements[element_id].get('y'))
-                w = data.get('width', self.elements[element_id].get('width'))
-                h = data.get('height', self.elements[element_id].get('height'))
-                item.set_geometry(x, y, w, h)
+                elem = self._elements[element_id]
+                item.set_geometry(
+                    elem.get('x', 0), elem.get('y', 0),
+                    elem.get('width', 100), elem.get('height', 30)
+                )
 
     def remove_element(self, element_id: int):
-        """
-        Удаляет элемент из коллекции и убирает его графику со сцены.
-
-        Args:
-            element_id: ID удаляемого элемента.
-        """
-        if element_id in self.elements:
-            self.deleted_ids.add(element_id)
-
-            # Удаляем графику со сцены
-            item = self.graphics_items.pop(element_id, None)
-            if item and item.scene():
-                item.scene().removeItem(item)
-
-            del self.elements[element_id]
-            self.selected_ids.discard(element_id)
-
-    def select_element(self, element_id: int, additive: bool = False):
-        """Управляет состоянием выделения."""
-        if element_id not in self.elements:
+        if element_id not in self._elements:
             return
+        self._deleted_ids.add(element_id)
+        item = self._graphics_items.pop(element_id, None)
+        if item and item.scene():
+            item.scene().removeItem(item)
+        del self._elements[element_id]
+        self._selected_ids.discard(element_id)
+        if self._last_selected_id == element_id:
+            self._last_selected_id = next(iter(self._selected_ids), None) if self._selected_ids else None
+        if self._active_container_id == element_id:
+            self._active_container_id = None
 
-        if not additive:
-            self.clear_selection()
-        self.selected_ids.add(element_id)
+    # =========================================================================
+    # ГРУППОВОЕ ВЫДЕЛЕНИЕ (с валидацией контейнера)
+    # =========================================================================
+
+    def add_to_selection(self, element_id: int) -> bool:
+        if element_id not in self._elements:
+            return True
+        parent_id = self._elements[element_id].get('parent_id')
+        if self._selected_ids and parent_id != self._active_container_id:
+            return False
+        self._selected_ids.add(element_id)
+        self._active_container_id = parent_id
+        self._last_selected_id = element_id
+        if isDebug:
+            print(f"[DEBUG CM.add_to_selection] id={element_id}, selected={self._selected_ids}, last={self._last_selected_id}")
+        return True
+
+    def remove_from_selection(self, element_id: int):
+        self._selected_ids.discard(element_id)
+        if self._last_selected_id == element_id:
+            self._last_selected_id = next(iter(self._selected_ids), None) if self._selected_ids else None
+        if not self._selected_ids:
+            self._active_container_id = None
+        if isDebug:
+            print(f"[DEBUG CM.remove_from_selection] id={element_id}, selected={self._selected_ids}, last={self._last_selected_id}")
+
+    def set_selection(self, element_ids: List[int], container_id: Optional[int]):
+        self._selected_ids.clear()
+        valid_ids = [eid for eid in element_ids if eid in self._elements]
+        self._selected_ids.update(valid_ids)
+        self._active_container_id = container_id
+        self._last_selected_id = valid_ids[-1] if valid_ids else None
+        if isDebug:
+            print(f"[DEBUG CM.set_selection] ids={valid_ids}, container={container_id}, last={self._last_selected_id}")
 
     def clear_selection(self):
-        """Снимает выделение со всех элементов."""
-        self.selected_ids.clear()
+        self._selected_ids.clear()
+        self._active_container_id = None
+        self._last_selected_id = None
+        if isDebug:
+            print(f"[DEBUG CM.clear_selection] cleared")
 
-    def get_selected_elements(self) -> List[Dict]:
-        """Возвращает список данных выделенных элементов."""
-        return [self.elements[eid] for eid in self.selected_ids if eid in self.elements]
+    def select_element(self, element_id: int, additive: bool = False) -> bool:
+        if element_id not in self._elements:
+            return True
+        if not additive:
+            self.clear_selection()
+            self._selected_ids.add(element_id)
+            self._active_container_id = self._elements[element_id].get('parent_id')
+            self._last_selected_id = element_id
+            if isDebug:
+                print(f"[DEBUG CM.select_element] id={element_id}, additive=False, selected={self._selected_ids}, last={self._last_selected_id}")
+            return True
+        return self.add_to_selection(element_id)
+
+    # =========================================================================
+    # ГРУППОВЫЕ ОПЕРАЦИИ
+    # =========================================================================
 
     def move_selected(self, dx: float, dy: float):
-        """
-        Перемещает все выделенные элементы на вектор (dx, dy).
-        Обновляет И данные в памяти, И позицию на сцене.
-        """
-        for eid in list(self.selected_ids):
-            if eid in self.elements:
-                elem = self.elements[eid]
+        if not self._selected_ids:
+            return
+        if isDebug:
+            print(f"[DEBUG CM.move_selected] dx={dx}, dy={dy}, count={len(self._selected_ids)}")
+        for eid in list(self._selected_ids):
+            if eid in self._elements:
+                elem = self._elements[eid]
                 elem['x'] = elem.get('x', 0) + dx
                 elem['y'] = elem.get('y', 0) + dy
-
-                # Двигаем графику
-                item = self.graphics_items.get(eid)
+                item = self._graphics_items.get(eid)
                 if item:
                     item.moveBy(dx, dy)
 
     def resize_selected(self, dw: float, dh: float):
-        """Изменяет размер выделенных элементов."""
+        if not self._selected_ids:
+            return
         min_w, min_h = 20, 15
-        for eid in list(self.selected_ids):
-            if eid in self.elements:
-                elem = self.elements[eid]
+        if isDebug:
+            print(f"[DEBUG CM.resize_selected] dw={dw}, dh={dh}, count={len(self._selected_ids)}")
+        for eid in list(self._selected_ids):
+            if eid in self._elements:
+                elem = self._elements[eid]
                 new_w = max(min_w, elem.get('width', 100) + dw)
                 new_h = max(min_h, elem.get('height', 30) + dh)
                 elem['width'] = new_w
                 elem['height'] = new_h
-
-                # Меняем размер графики
-                item = self.graphics_items.get(eid)
-                if item and hasattr(item, 'resize'):
-                    item.resize(new_w, new_h)
+                item = self._graphics_items.get(eid)
+                if item and hasattr(item, 'set_rect'):
+                    item.set_rect(0, 0, new_w, new_h)
 
     def delete_selected(self):
-        """Удаляет все выделенные элементы."""
-        for eid in list(self.selected_ids):
+        for eid in list(self._selected_ids):
             self.remove_element(eid)
-        self.selected_ids.clear()
+        self._selected_ids.clear()
+        self._active_container_id = None
+        self._last_selected_id = None
 
     def align_selected(self, alignment: str):
-        """Выравнивает выделенные элементы по заданной стороне."""
         selected = self.get_selected_elements()
         if len(selected) < 2:
             return
-
-        ref_val = None
         key_map = {'top': 'y', 'left': 'x', 'bottom': 'y', 'right': 'x'}
-
+        ref_val = None
         if alignment == 'top':
             ref_val = min(e.get('y', 0) for e in selected)
         elif alignment == 'left':
@@ -209,63 +228,81 @@ class CollectionManager:
             ref_val = max(e.get('y', 0) + e.get('height', 30) for e in selected)
         elif alignment == 'right':
             ref_val = max(e.get('x', 0) + e.get('width', 100) for e in selected)
-
         if ref_val is not None:
             for e in selected:
+                eid = e['id']
+                if eid not in self._elements:
+                    continue
+                elem = self._elements[eid]
                 if alignment in ('top', 'left'):
-                    e[key_map[alignment]] = ref_val
+                    elem[key_map[alignment]] = ref_val
                 else:
-                    e[key_map[alignment]] = ref_val - e.get('height' if alignment == 'bottom' else 'width', 0)
-
-                # Применяем к графике
-                item = self.graphics_items.get(e['id'])
+                    dim = 'height' if alignment == 'bottom' else 'width'
+                    elem[key_map[alignment]] = ref_val - elem.get(dim, 0)
+                item = self._graphics_items.get(eid)
                 if item:
                     if alignment == 'top':
                         item.setY(ref_val)
                     elif alignment == 'left':
                         item.setX(ref_val)
                     elif alignment == 'bottom':
-                        item.setY(ref_val - e['height'])
+                        item.setY(ref_val - elem['height'])
                     elif alignment == 'right':
-                        item.setX(ref_val - e['width'])
+                        item.setX(ref_val - elem['width'])
+
+    def equalize_width(self):
+        selected = self.get_selected_elements()
+        if len(selected) < 2:
+            return
+        max_w = max(e.get('width', 100) for e in selected)
+        for e in selected:
+            eid = e['id']
+            if eid in self._elements:
+                self._elements[eid]['width'] = max_w
+                item = self._graphics_items.get(eid)
+                if item and hasattr(item, 'set_rect'):
+                    item.set_rect(0, 0, max_w, self._elements[eid].get('height', 30))
+
+    def equalize_height(self):
+        selected = self.get_selected_elements()
+        if len(selected) < 2:
+            return
+        max_h = max(e.get('height', 30) for e in selected)
+        for e in selected:
+            eid = e['id']
+            if eid in self._elements:
+                self._elements[eid]['height'] = max_h
+                item = self._graphics_items.get(eid)
+                if item and hasattr(item, 'set_rect'):
+                    item.set_rect(0, 0, self._elements[eid].get('width', 100), max_h)
 
     def equalize_sizes(self):
-        """Приводит размеры всех выделенных элементов к размеру последнего выбранного."""
         last = self.get_last_selected()
         if not last:
             return
-
         ref_w = last.get('width', 100)
         ref_h = last.get('height', 30)
-
         for elem in self.get_selected_elements():
-            if elem['id'] != last['id']:
-                elem['width'] = ref_w
-                elem['height'] = ref_h
+            eid = elem['id']
+            if eid != last['id'] and eid in self._elements:
+                self._elements[eid]['width'] = ref_w
+                self._elements[eid]['height'] = ref_h
+                item = self._graphics_items.get(eid)
+                if item and hasattr(item, 'set_rect'):
+                    item.set_rect(0, 0, ref_w, ref_h)
 
-                item = self.graphics_items.get(elem['id'])
-                if item and hasattr(item, 'resize'):
-                    item.resize(ref_w, ref_h)
-
-    def get_last_selected(self) -> Optional[Dict]:
-        """Возвращает последний выделенный элемент (для привязки выравнивания/размера)."""
-        if not self.selected_ids:
-            return None
-        last_id = list(self.selected_ids)[-1]
-        return self.elements.get(last_id)
+    # =========================================================================
+    # СЕРИАЛИЗАЦИЯ ДЛЯ СОХРАНЕНИЯ
+    # =========================================================================
 
     def get_inserts(self) -> List[Dict]:
-        """Элементы для INSERT (ID < 0)."""
-        return [v for k, v in self.elements.items() if k < 0]
+        return [dict(v) for k, v in self._elements.items() if k < 0]
 
     def get_updates(self) -> List[Dict]:
-        """Элементы для UPDATE (ID > 0)."""
-        return [v for k, v in self.elements.items() if k > 0 and k not in self.deleted_ids]
+        return [dict(v) for k, v in self._elements.items() if k > 0 and k not in self._deleted_ids]
 
     def get_deletes(self) -> List[int]:
-        """ID элементов для DELETE."""
-        return list(self.deleted_ids)
+        return list(self._deleted_ids)
 
     def get_next_id(self) -> int:
-        """Предпросмотр следующего ID без инкремента."""
-        return self.next_id - 1
+        return self._next_id - 1

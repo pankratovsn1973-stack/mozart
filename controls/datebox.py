@@ -1,13 +1,14 @@
 # -*- coding: utf-8 -*-
 # /home/sergey/Documents/configurate/controls/datebox.py
-
+# -- coding: utf-8 --
 from PySide6.QtWidgets import QDateEdit
-from PySide6.QtCore import Property, QDate
-
+from PySide6.QtCore import Property, QDate, Signal
 from .base_control import BaseControl
 
 
 class MozartDateBox(QDateEdit, BaseControl):
+    value_changed = Signal(object)
+
     def __init__(self, parent=None):
         QDateEdit.__init__(self, parent)
         BaseControl.__init__(self)
