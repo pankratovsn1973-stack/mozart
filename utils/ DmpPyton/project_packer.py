@@ -1,4 +1,4 @@
-# utils/project_packer.py
+#л utils/project_packer.py
 # -*- coding: utf-8 -*-
 
 import os

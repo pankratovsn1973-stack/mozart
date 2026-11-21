@@ -1,6 +1,5 @@
 # utils/db_backup_model.py
-# -*- coding: utf-8 -*-
-
+# -- coding: utf-8 --
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QStandardItemModel, QStandardItem
 
@@ -12,7 +11,6 @@ class DbBackupModel(QStandardItemModel):
         super().__init__()
         self.setHorizontalHeaderLabels(["Объекты базы данных"])
         self._block_signals = False
-
         root_node = self.invisibleRootItem()
         self._build_tree(db_structure, root_node)
         self.itemChanged.connect(self._on_item_changed)
@@ -20,34 +18,32 @@ class DbBackupModel(QStandardItemModel):
     def _build_tree(self, db_structure, parent_node):
         """Динамическое построение дерева объектов на основе метаданных СУБД."""
         for schema_name, schema_data in sorted(db_structure.items()):
-            # 1. Узел Схемы (Верхний уровень)
+            # 1. Узел Схемы
             schema_item = QStandardItem(f"Схема: {schema_name}")
             schema_item.setCheckable(True)
             schema_item.setEditable(False)
-            schema_item.setData({"type": "schema", "name": schema_name, "comment": schema_data["description"]},
-                                Qt.UserRole)
+            schema_item.setData({
+                "type": "schema",
+                "name": schema_name,
+                "comment": schema_data["description"]
+            }, Qt.UserRole)
             parent_node.appendRow(schema_item)
 
-            # 1.1 Параметры/Опции внутри самой схемы
-            opt_desc = QStandardItem("Описание схемы")
-            opt_desc.setData({"type": "schema_opt", "key": "export_schema_desc", "schema": schema_name}, Qt.UserRole)
-
-            opt_trig = QStandardItem("Выгружать триггеры")
-            opt_trig.setData({"type": "schema_opt", "key": "export_triggers", "schema": schema_name}, Qt.UserRole)
-
-            opt_rules = QStandardItem("Выгружать правила")
-            opt_rules.setData({"type": "schema_opt", "key": "export_rules", "schema": schema_name}, Qt.UserRole)
-
-            opt_keys = QStandardItem("Выгружать ключи")
-            opt_keys.setData({"type": "schema_opt", "key": "export_keys", "schema": schema_name}, Qt.UserRole)
-
-            for opt in [opt_desc, opt_trig, opt_rules, opt_keys]:
+            # Опции схемы
+            for key, label in [
+                ("export_schema_desc", "Описание схемы"),
+                ("export_triggers", "Выгружать триггеры"),
+                ("export_rules", "Выгружать правила"),
+                ("export_keys", "Выгружать ключи")
+            ]:
+                opt = QStandardItem(label)
+                opt.setData({"type": "schema_opt", "key": key, "schema": schema_name}, Qt.UserRole)
                 opt.setCheckable(True)
                 opt.setEditable(False)
                 schema_item.appendRow(opt)
 
-            # 2. Агрегат "Таблицы" внутри схемы
-            if schema_data["tables"]:
+            # 2. Таблицы
+            if schema_data.get("tables"):
                 tables_root = QStandardItem("Таблицы")
                 tables_root.setCheckable(True)
                 tables_root.setEditable(False)
@@ -61,26 +57,16 @@ class DbBackupModel(QStandardItemModel):
                     t_item.setData({"type": "table", "name": t_name, "schema": schema_name}, Qt.UserRole)
                     tables_root.appendRow(t_item)
 
-                    # Свойства каждой конкретной таблицы
-                    p_desc = QStandardItem("Описание")
-                    p_desc.setData({"type": "table_opt", "key": "description", "table": t_name, "schema": schema_name},
-                                   Qt.UserRole)
-
-                    p_struct = QStandardItem("Структура")
-                    p_struct.setData({"type": "table_opt", "key": "structure", "table": t_name, "schema": schema_name},
+                    for p_key, p_label in [("description", "Описание"), ("structure", "Структура"), ("data", "Данные")]:
+                        prop = QStandardItem(p_label)
+                        prop.setData({"type": "table_opt", "key": p_key, "table": t_name, "schema": schema_name},
                                      Qt.UserRole)
-
-                    p_data = QStandardItem("Данные")
-                    p_data.setData({"type": "table_opt", "key": "data", "table": t_name, "schema": schema_name},
-                                   Qt.UserRole)
-
-                    for prop in [p_desc, p_struct, p_data]:
                         prop.setCheckable(True)
                         prop.setEditable(False)
                         t_item.appendRow(prop)
 
-            # 3. Агрегат "Хранимые процедуры" внутри схемы
-            if schema_data["functions"]:
+            # 3. Функции
+            if schema_data.get("functions"):
                 funcs_root = QStandardItem("Хранимые процедуры")
                 funcs_root.setCheckable(True)
                 funcs_root.setEditable(False)
@@ -95,8 +81,8 @@ class DbBackupModel(QStandardItemModel):
                                    Qt.UserRole)
                     funcs_root.appendRow(f_item)
 
-            # 4. Агрегат "Вьюхи" внутри схемы
-            if schema_data["views"]:
+            # 4. Вьюхи
+            if schema_data.get("views"):
                 views_root = QStandardItem("Вьюхи")
                 views_root.setCheckable(True)
                 views_root.setEditable(False)
@@ -111,19 +97,13 @@ class DbBackupModel(QStandardItemModel):
                     views_root.appendRow(v_item)
 
     def _on_item_changed(self, item):
-        """Сквозной каскадный пересчет состояний чекбоксов при клике."""
+        """Каскадный пересчет при ручном изменении."""
         if self._block_signals:
             return
-
         self._block_signals = True
         state = item.checkState()
-
-        # 1. Проброс состояния вниз ко всем детям (наследование галок)
         self._set_children_state(item, state)
-
-        # 2. Каскадный пересчет состояний родителей вверх по цепочке
         self._update_parent_state(item)
-
         self._block_signals = False
 
     def _set_children_state(self, parent_item, state):
@@ -138,14 +118,14 @@ class DbBackupModel(QStandardItemModel):
         parent = item.parent()
         if not parent:
             return
-
         all_checked, all_unchecked = True, True
         for row in range(parent.rowCount()):
             child = parent.child(row, 0)
             if child:
-                if child.checkState() == Qt.Checked:
+                cs = child.checkState()
+                if cs == Qt.Checked:
                     all_unchecked = False
-                elif child.checkState() == Qt.Unchecked:
+                elif cs == Qt.Unchecked:
                     all_checked = False
                 else:
                     all_checked = all_unchecked = False
@@ -156,11 +136,9 @@ class DbBackupModel(QStandardItemModel):
             parent.setCheckState(Qt.Unchecked)
         else:
             parent.setCheckState(Qt.PartiallyChecked)
-
         self._update_parent_state(parent)
 
     def get_all_checked_nodes(self):
-        """Собирает внутренние идентификаторы всех отмеченных узлов для хранения в БД."""
         checked_paths = []
         self._collect_all_checked(self.invisibleRootItem(), "", checked_paths)
         return checked_paths
@@ -177,12 +155,31 @@ class DbBackupModel(QStandardItemModel):
                     self._collect_all_checked(child, node_path, paths_list)
 
     def restore_checked_nodes(self, checked_paths):
-        """Восстановление состояния чекбоксов по сохраненным текстовым путям."""
-        if not checked_paths:
-            return
+        """
+        Полное восстановление состояния из БД.
+        Сначала снимает ВСЕ галочки, затем ставит только те, что есть в базе.
+        """
         self._block_signals = True
-        self._apply_restored_states(self.invisibleRootItem(), "", set(checked_paths))
+
+        # ШАГ 1: Полный сброс всего дерева
+        self._clear_all_checkstates(self.invisibleRootItem())
+
+        # ШАГ 2: Установка галочек из базы
+        if checked_paths:
+            self._apply_restored_states(self.invisibleRootItem(), "", set(checked_paths))
+
+        # ШАГ 3: Пересчет родителей (PartiallyChecked)
+        self._recalculate_parents(self.invisibleRootItem())
+
         self._block_signals = False
+
+    def _clear_all_checkstates(self, parent_item):
+        for row in range(parent_item.rowCount()):
+            child = parent_item.child(row, 0)
+            if child:
+                child.setCheckState(Qt.Unchecked)
+                if child.rowCount() > 0:
+                    self._clear_all_checkstates(child)
 
     def _apply_restored_states(self, parent_item, current_path, checked_set):
         for row in range(parent_item.rowCount()):
@@ -194,4 +191,10 @@ class DbBackupModel(QStandardItemModel):
                     child.setCheckState(Qt.Checked)
                 if child.rowCount() > 0:
                     self._apply_restored_states(child, node_path, checked_set)
-                    self._update_parent_state(child)
+
+    def _recalculate_parents(self, parent_item):
+        for row in range(parent_item.rowCount()):
+            child = parent_item.child(row, 0)
+            if child and child.rowCount() > 0:
+                self._recalculate_parents(child)
+                self._update_parent_state(child)

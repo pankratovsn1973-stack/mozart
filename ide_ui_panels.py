@@ -53,6 +53,9 @@ class MozartIDEPanelsMixin:
         self.actions['lang_menu'].setTitle(self.translator.tr('menu_language'))
         self.actions['help_menu'].setTitle(self.translator.tr('menu_help'))
         self.actions['about'].setText(self.translator.tr('action_about'))
+        if 'sync_translations' in self.actions:
+            translated_title = self.translator.tr('action_refresh_lang')
+            self.actions['sync_translations'].setText(f"🔄 {translated_title}")
 
         # Статус бар
         self.statusBar.showMessage(self.translator.tr('status_ready'))
@@ -91,13 +94,25 @@ class MozartIDEPanelsMixin:
         self.edit_db = QLineEdit()
         self.edit_user = QLineEdit()
         self.edit_pass = QLineEdit()
-        self.edit_pass.setEchoMode(QLineEdit.Password)
 
         form.addRow(self.translator.tr('field_host'), self.edit_host)
         form.addRow(self.translator.tr('field_port'), self.edit_port)
         form.addRow(self.translator.tr('field_db'), self.edit_db)
         form.addRow(self.translator.tr('field_user'), self.edit_user)
         form.addRow(self.translator.tr('field_password'), self.edit_pass)
+
+        # Поле выбора текущего времени сессии ("Машина времени")
+        from PySide6.QtWidgets import QDateTimeEdit
+        self.edit_system_date = QDateTimeEdit()
+
+        # 🚀 ФИКС v8.1: Принудительно задаем жесткий формат отображения ДД.ММ.ГГГГ
+        self.edit_system_date.setDisplayFormat("dd.MM.yyyy HH:mm:ss")
+
+        # Выставляем строго текущую системную дату по умолчанию
+        self.edit_system_date.setDateTime(goProject.system_date)
+        self.edit_system_date.setCalendarPopup(True)
+        self.edit_system_date.dateTimeChanged.connect(self.on_system_date_changed)
+        form.addRow("Время сессии:", self.edit_system_date)
 
         self.btn_connect = QPushButton(self.translator.tr('btn_connect'))
         self.btn_connect.clicked.connect(self.connect_to_db)
@@ -170,17 +185,29 @@ class MozartIDEPanelsMixin:
         self.edit_pass.clear()
 
     def connect_to_db(self):
-        """Установка соединения с СУБД Postgres и синхронизация словарей."""
+        """Установка соединения с СУБД Postgres и синхронизация словарей (v8.1)."""
         goProject.db_host = self.edit_host.text().strip()
         goProject.db_port = self.edit_port.text().strip()
         goProject.db_name = self.edit_db.text().strip()
         goProject.db_user = self.edit_user.text().strip()
+
+        # 🚀 ФИКС: Возвращаем вызов .text() с круглыми скобками
         goProject.db_pass = self.edit_pass.text()
 
         ok, msg = goProject.p_Connect()
         if ok:
             db_service = DatabaseService()
+            goProject.set_db_service(db_service)
             self.translator.sync_from_postgres(db_service)
+
+            # 🚀 ФИКС v8.1: Полностью вырезан блок автовыставления даты через MAX(dt_start).
+            # Вместо этого мы берем актуальную дату, установленную в виджете на форме,
+            # и принудительно синхронизируем её с goProject и ОЗУ кэшем мостов.
+            qdt = self.edit_system_date.dateTime()
+            self.on_system_date_changed(qdt)
+            print(
+                f"[IDE] Соединение со Слоном установлено. Время сессии зафиксировано: {qdt.toString('dd.MM.yyyy HH:mm:ss')}")
+
             self.retranslate_ui()
 
             self.lbl_conn_status.setText(self.translator.tr('status_connected'))

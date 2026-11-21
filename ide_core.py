@@ -1,32 +1,61 @@
+# Полный путь: ide_core.py
+# -*- coding: utf-8 -*-
 
-
-
-# ide_core.py
 import psycopg2
 import json
 import os
-
+from core.bridge_function_registry import BridgeFunctionRegistry
+from core.bridge_functions_builtin import register_builtin_bridges
 
 class GoProject:
+    """Глобальный синглтон управления параметрами и машинами ядра платформы Mozart ERP."""
+
     def __init__(self):
-        # --- Закладка 1: БАЗА ДАННЫХ (Layer 1) ---
+        # Базовые параметры подключения (Layer 1)
         self.db_host = "localhost"
         self.db_port = "5432"
         self.db_name = "mozart_erp"
         self.db_user = "postgres"
         self.db_pass = ""
-        self.db_conn = None  # Активное соединение psycopg2
-        self.current_user_id = None  # ID текущего пользователя (конфигуратора)
+        self.db_conn = None  # Сюда записывается строго физическое соединение psycopg2.connection
+        self.current_user_id = None
 
-        # --- Закладка 2: СРЕДНИЙ СЛОЙ (Layer 2) ---
+        # Системное время "Машины времени"
+        from PySide6.QtCore import QDateTime
+        self.system_date = QDateTime.currentDateTime()
+
+        # Инициализация Машины Классов при старте
+        from core.class_registry import ClassRegistry
+        self.class_registry = ClassRegistry()
+
+        # Инициализация Менеджера Мостов Свойств (Запускается один раз при старте)
+        from core.property_bridge_manager import PropertyBridgeManager
+        self.property_bridge_manager = PropertyBridgeManager()
+
+        # Библиотека простых ERP-методов трансляции
+        from core.superlibre import SuperLibre
+        from core.bridge_resolver import BridgeResolver
+        self.superlibre = SuperLibre()
+        self.bridge_resolver = BridgeResolver(self)
+
+        # Реестр функций трансляции low-code свойств
+        self.bridge_functions = BridgeFunctionRegistry()
+        register_builtin_bridges(self.bridge_functions)
+
+        # Средний слой (Layer 2)
         self.l2_path = os.getcwd() + "/layer2_server"
         self.l2_port = 8000
         self.l2_process = None
 
-        # --- Закладка 3: КЛИЕНТ (Layer 3) ---
-        self.l3_path = os.getcwd() + "/layer3_client"
-        self.l3_starter = "starter.py"
-        self.l3_process = None
+        # 🚀 ДИАГНОСТИКА: печатаем системную дату сессии при старте
+        print(f"[GO_PROJECT] Session Date: {self.system_date.toString('yyyy-MM-dd HH:mm:ss')}")
+
+    def set_db_service(self, db_service):
+        """Передает инициализированный сервис базы данных в Машины ядра и греет кэш мостов."""
+        self.class_registry.db = db_service
+
+        self.property_bridge_manager.db = db_service
+        self.property_bridge_manager.init_and_warm_cache()
 
     def p_Connect(self):
         """
@@ -34,9 +63,11 @@ class GoProject:
         Проверяет, что пользователь имеет роль конфигуратора.
         """
         try:
-            # Закрываем старое соединение, если оно было
             if self.db_conn:
-                self.db_conn.close()
+                try:
+                    self.db_conn.close()
+                except:
+                    pass
 
             self.db_conn = psycopg2.connect(
                 host=self.db_host,
@@ -48,9 +79,7 @@ class GoProject:
             )
             self.db_conn.autocommit = True
 
-            # Проверяем, является ли текущий пользователь конфигуратором
             with self.db_conn.cursor() as cur:
-                # Сначала получаем ID пользователя по логину
                 cur.execute("SELECT id FROM auth.users WHERE clogin = %s", (self.db_user,))
                 row = cur.fetchone()
                 if not row:
@@ -60,7 +89,6 @@ class GoProject:
 
                 user_id = row[0]
 
-                # Проверяем наличие роли с типом 'CONFIG'
                 cur.execute("""
                     SELECT u.id 
                     FROM auth.users u
@@ -81,17 +109,14 @@ class GoProject:
             return False, f"Ошибка подключения: {str(e)}"
 
     def f_Execute(self, sql, params=None):
-        """
-        Выполнение SQL-запроса (SELECT).
-        Возвращает коллекцию строк (loResult). [0.3]
-        """
+        """Выполнение SQL-запроса (SELECT). Возвращает коллекцию строк."""
         if not self.db_conn:
             return []
 
         try:
             with self.db_conn.cursor() as cur:
                 cur.execute(sql, params)
-                if cur.description:  # Если запрос возвращает данные (SELECT)
+                if cur.description:
                     return cur.fetchall()
                 return []
         except Exception as e:
@@ -105,8 +130,7 @@ class GoProject:
                 "host": self.db_host, "port": self.db_port,
                 "name": self.db_name, "user": self.db_user, "pass": self.db_pass
             },
-            "l2": {"path": self.l2_path, "port": self.l2_port},
-            "l3": {"path": self.l3_path, "starter": self.l3_starter}
+            "l2": {"path": self.l2_path, "port": self.l2_port}
         }
         with open(file_path, 'w', encoding='utf-8') as f:
             json.dump(data, f, indent=4, ensure_ascii=False)
@@ -128,9 +152,6 @@ class GoProject:
 
             self.l2_path = data['l2'].get('path', '')
             self.l2_port = data['l2'].get('port', 8000)
-
-            self.l3_path = data['l3'].get('path', '')
-            self.l3_starter = data['l3'].get('starter', 'starter.py')
 
             return True, "Проект загружен."
         except Exception as e:

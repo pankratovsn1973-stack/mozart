@@ -1,22 +1,27 @@
-# utils/db_backup_tool.py
+# utils/DB_manager_tool.py
 # -*- coding: utf-8 -*-
-
 import os
 import sys
 from PySide6.QtWidgets import (QApplication, QWidget, QVBoxLayout, QHBoxLayout,
                                QTreeView, QPushButton, QLineEdit, QLabel,
-                               QFileDialog, QMessageBox, QStyle, QFrame)
-from PySide6.QtCore import Qt, QDir, QModelIndex
+                               QFileDialog, QMessageBox, QStyle, QFrame, QCheckBox)
+from PySide6.QtCore import Qt, QDir
 
-# Родные модульные импорты бэкапа Mozart ERP
-from db_backup_extractor import DbBackupExtractor
-from db_backup_model import DbBackupModel
-from db_backup_sqlite import BackupDbManager
+try:
+    from db_backup_extractor import DbBackupExtractor
+    from db_backup_model import DbBackupModel
+    from db_backup_sqlite import BackupDbManager
+except ImportError:
+    from utils.db_backup_extractor import DbBackupExtractor
+    from utils.db_backup_model import DbBackupModel
+    from utils.db_backup_sqlite import BackupDbManager
 
 
 class DbBackupToolWidget(QWidget):
     def __init__(self):
         super().__init__()
+
+        # Исправлены пробелы в конфигурации подключения
         self.db_config = {
             "host": "localhost",
             "port": 5432,
@@ -40,32 +45,55 @@ class DbBackupToolWidget(QWidget):
         main_hbox.setContentsMargins(10, 10, 10, 10)
         main_hbox.setSpacing(10)
 
-        # СЛЕВА: Дерево объектов БД
         left_widget = QWidget()
         left_layout = QVBoxLayout(left_widget)
         left_layout.setContentsMargins(0, 0, 0, 0)
         left_layout.addWidget(QLabel("<b>Объекты и опции схемы PostgreSQL:</b>"))
 
         self.tree_view = QTreeView(self)
+        self.tree_view.setSelectionMode(QTreeView.ExtendedSelection)
+
         self.model = DbBackupModel(self.db_structure)
         self.tree_view.setModel(self.model)
         self.tree_view.expandToDepth(0)
+
         left_layout.addWidget(self.tree_view)
         main_hbox.addWidget(left_widget, stretch=6)
 
-        # ПОСЕРЕДИНЕ: Черный разделитель
         separator = QFrame()
         separator.setFrameShape(QFrame.VLine)
         separator.setFrameShadow(QFrame.Plain)
         separator.setStyleSheet("color: #000000; qproperty-lineWidth: 1;")
         main_hbox.addWidget(separator)
 
-        # СПРАВА: Настройки
         right_widget = QWidget()
         right_layout = QVBoxLayout(right_widget)
         right_layout.setContentsMargins(5, 0, 0, 0)
         right_layout.setSpacing(15)
         right_layout.setAlignment(Qt.AlignTop)
+
+        right_layout.addWidget(QLabel("<b>Массовый сброс опций отмеченных таблиц:</b>"))
+
+        self.chk_reset_data = QCheckBox("Данные (data)", self)
+        self.chk_reset_structure = QCheckBox("Структура (structure)", self)
+        self.chk_reset_description = QCheckBox("Описание (description)", self)
+
+        right_layout.addWidget(self.chk_reset_data)
+        right_layout.addWidget(self.chk_reset_structure)
+        right_layout.addWidget(self.chk_reset_description)
+
+        self.btn_reset_selected_options = QPushButton("Сбросить выбранные параметры", self)
+        self.btn_reset_selected_options.setToolTip(
+            "Снимет галочки со ВСЕХ текущих отмеченных узлов, "
+            "соответствующих выбранным типам (data/structure/description)."
+        )
+        self.btn_reset_selected_options.clicked.connect(self._reset_specific_tables_options)
+        right_layout.addWidget(self.btn_reset_selected_options)
+
+        sub_sep = QFrame()
+        sub_sep.setFrameShape(QFrame.HLine)
+        sub_sep.setFrameShadow(QFrame.Sunken)
+        right_layout.addWidget(sub_sep)
 
         right_layout.addWidget(QLabel("<b>Каталог сохранения дампа:</b>"))
         path_layout = QHBoxLayout()
@@ -73,7 +101,7 @@ class DbBackupToolWidget(QWidget):
 
         self.edt_target_path = QLineEdit(self)
         self.edt_target_path.setReadOnly(True)
-        self.edt_target_path.setPlaceholderText("Выберите директорию на диске...")
+        self.edt_target_path.setPlaceholderText("Выберите директорию...")
         path_layout.addWidget(self.edt_target_path)
 
         self.btn_browse = QPushButton(self)
@@ -96,7 +124,8 @@ class DbBackupToolWidget(QWidget):
 
         self.btn_run_dump = QPushButton("Запустить выгрузку дампа", self)
         self.btn_run_dump.setStyleSheet("""
-            QPushButton { background-color: #f0f0f0; color: #000000; border: 1px solid #ababab; border-radius: 3px; height: 40px; font-weight: bold; }
+            QPushButton { background-color: #f0f0f0; color: #000000; border: 1px solid #ababab; 
+                          border-radius: 3px; height: 40px; font-weight: bold; }
             QPushButton:hover { background-color: #e2e2e2; }
         """)
         self.btn_run_dump.clicked.connect(self.run_backup_process)
@@ -105,10 +134,58 @@ class DbBackupToolWidget(QWidget):
         main_hbox.addWidget(right_widget, stretch=4)
 
     def _show_target_browser(self):
-        dir_path = QFileDialog.getExistingDirectory(self, "Выберите каталог назначения", QDir.homePath(),
-                                                    QFileDialog.ShowDirsOnly | QFileDialog.DontResolveSymlinks)
+        dir_path = QFileDialog.getExistingDirectory(
+            self, "Выберите каталог назначения", QDir.homePath(),
+            QFileDialog.ShowDirsOnly | QFileDialog.DontResolveSymlinks
+        )
         if dir_path:
             self.edt_target_path.setText(dir_path)
+
+    def _reset_specific_tables_options(self):
+        """
+        АТОМАРНЫЙ СБРОС ЧЕРЕЗ БАЗУ ДАННЫХ.
+        1. Находим все отмеченные узлы, соответствующие критериям.
+        2. Удаляем их из SQLite.
+        3. Полностью перерисовываем дерево по обновленной базе.
+        """
+        keys_to_reset = set()
+        if self.chk_reset_data.isChecked(): keys_to_reset.add("data")
+        if self.chk_reset_structure.isChecked(): keys_to_reset.add("structure")
+        if self.chk_reset_description.isChecked(): keys_to_reset.add("description")
+
+        if not keys_to_reset:
+            QMessageBox.warning(self, "Внимание", "Выберите хотя бы один параметр для сброса!")
+            return
+
+        all_checked_paths = self.model.get_all_checked_nodes()
+        paths_to_uncheck = []
+        key_map = {"Описание": "description", "Структура": "structure", "Данные": "data"}
+
+        for path in all_checked_paths:
+            parts = path.split("/")
+            # ИСПРАВЛЕНО: Корректное обращение к индексу [1] вместо сравнения списка со строкой
+            # Путь опции таблицы строго равен 4 сегментам: "Схема: name/Таблицы/table_name/Опция"
+            if len(parts) == 4 and parts[1] == "Таблицы":
+                last_segment = parts[-1]
+                actual_key = key_map.get(last_segment)
+                if actual_key and actual_key in keys_to_reset:
+                    paths_to_uncheck.append(path)
+
+        if not paths_to_uncheck:
+            QMessageBox.information(self, "Информация",
+                                    "Нет отмеченных параметров, соответствующих выбранным критериям.")
+            return
+
+        # 1. Удаляем из БД
+        self.db_sqlite.remove_nodes(paths_to_uncheck)
+
+        # 2. Загружаем обновленное состояние
+        _, _, new_checked = self.db_sqlite.load_settings()
+
+        # 3. Принудительно восстанавливаем UI (полный сброс + установка)
+        self.model.restore_checked_nodes(new_checked)
+
+        QMessageBox.information(self, "Успех", f"Сброшено {len(paths_to_uncheck)} параметров.")
 
     def _parse_tree_config(self):
         config = {}
@@ -117,26 +194,21 @@ class DbBackupToolWidget(QWidget):
             s_item = root.child(s_idx, 0)
             s_data = s_item.data(Qt.UserRole)
             s_name = s_data["name"]
-
             config[s_name] = {
                 "schema_comment": s_data["comment"], "export_schema_desc": False,
                 "export_triggers": False, "export_rules": False, "export_keys": False,
                 "tables": {}, "functions": {}, "views": []
             }
-
             for c_idx in range(s_item.rowCount()):
                 child = s_item.child(c_idx, 0)
                 c_data = child.data(Qt.UserRole)
-
                 if c_data["type"] == "schema_opt" and child.checkState() == Qt.Checked:
                     config[s_name][c_data["key"]] = True
-
                 elif c_data["type"] == "group" and c_data["name"] == "tables":
                     for t_idx in range(child.rowCount()):
                         t_item = child.child(t_idx, 0)
                         t_data = t_item.data(Qt.UserRole)
                         t_name = t_data["name"]
-
                         t_cfg = {"description": False, "structure": False, "data": False}
                         for p_idx in range(t_item.rowCount()):
                             p_item = t_item.child(p_idx, 0)
@@ -145,14 +217,12 @@ class DbBackupToolWidget(QWidget):
                                 t_cfg[p_data["key"]] = True
                         if any(t_cfg.values()):
                             config[s_name]["tables"][t_name] = t_cfg
-
                 elif c_data["type"] == "group" and c_data["name"] == "functions":
                     for f_idx in range(child.rowCount()):
                         f_item = child.child(f_idx, 0)
                         f_data = f_item.data(Qt.UserRole)
                         if f_item.checkState() == Qt.Checked:
                             config[s_name]["functions"][f_data["identity"]] = f_data["name"]
-
                 elif c_data["type"] == "group" and c_data["name"] == "views":
                     for v_idx in range(child.rowCount()):
                         v_item = child.child(v_idx, 0)
@@ -165,13 +235,13 @@ class DbBackupToolWidget(QWidget):
         target_dir = self.edt_target_path.text().strip()
         file_name = self.edt_file_name.text().strip()
         if not target_dir or not file_name:
-            QMessageBox.warning(self, "Внимание", "Укажите каталог сохранения и имя файла .sql!")
+            QMessageBox.warning(self, "Внимание", "Укажите каталог и имя файла!")
             return
 
         dump_config = self._parse_tree_config()
         full_sql_path = os.path.join(target_dir, file_name)
-
         success, msg = self.extractor.generate_dump(full_sql_path, dump_config)
+
         if success:
             QMessageBox.information(self, "Успех", f"{msg}\nФайл: {full_sql_path}")
         else:

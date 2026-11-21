@@ -353,3 +353,7 @@ class LocalTranslator:
                         (key, lang, text))
         conn.commit()
         conn.close()
+
+    def reload_from_postgres(self, db_service):
+        """Перелить переводы Postgres → SQLite и подхватить сразу."""
+        self.sync_from_postgres(db_service)

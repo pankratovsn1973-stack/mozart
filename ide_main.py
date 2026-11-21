@@ -8,6 +8,12 @@
 
 import sys
 import os
+# 🚀 КРИТИЧЕСКИЙ ФИКС ДЛЯ LINUX: Принудительно отключаем сырой Wayland-плагин Qt,
+# переключая графический стек на железобетонно стабильный X11 (Xwayland / xcb).
+# Это полностью предотвратит падение процесса с ошибкой Fatal Error / Exit code 255.
+os.environ["QT_QPA_PLATFORM"] = "xcb"
+
+
 from PySide6.QtWidgets import (QApplication, QMainWindow, QWidget, QHBoxLayout,
                              QSplitter, QStatusBar, QFileDialog, QMessageBox)
 from PySide6.QtCore import Qt
@@ -103,6 +109,14 @@ class MozartIDE(QMainWindow, MozartIDEPanelsMixin):
         # Меню "Язык"
         lang_menu = menubar.addMenu(self.translator.tr('menu_language'))
         self.actions['lang_menu'] = lang_menu
+
+        # Системное динамическое обновление кэша через ключ перевода
+        sync_act = QAction(self.translator.tr('action_refresh_lang'), self)
+        sync_act.triggered.connect(self.force_reload_translations)
+        lang_menu.addAction(sync_act)
+        self.actions['sync_translations'] = sync_act
+        lang_menu.addSeparator()
+
         languages = [
             ('ru', 'Русский'),
             ('en', 'English'),
@@ -122,6 +136,14 @@ class MozartIDE(QMainWindow, MozartIDEPanelsMixin):
         about_act = QAction(self.translator.tr('action_about'), self)
         about_act.triggered.connect(self.about)
         help_menu.addAction(about_act)
+
+        # Временная диагностика
+        diag_act = QAction("Диагностика методов", self)
+        diag_act.triggered.connect(self._run_methods_diagnostics)
+        help_menu.addAction(diag_act)
+
+
+
         self.actions['about'] = about_act
 
     def change_language(self, lang_code):
@@ -129,6 +151,44 @@ class MozartIDE(QMainWindow, MozartIDEPanelsMixin):
         self.retranslate_ui()
         if self.db_work_dialog and self.db_work_dialog.isVisible():
             self.db_work_dialog.retranslate_ui()
+
+    def force_reload_translations(self):
+        """Ручной вызов обновления кэша переводов из Postgres без перезапуска приложения.
+        Полностью локализован, сообщения вычитываются через ключи переводов.
+        """
+        # Проверяем подключение через голый системный флаг ядра
+        if not getattr(goProject, 'db_conn', None):
+            QMessageBox.warning(
+                self,
+                self.translator.tr('warning'),
+                self.translator.tr('err_no_db_connection')
+            )
+            return
+
+        try:
+            db_service = DatabaseService()
+            # Вызываем твой метод перезагрузки кэша внутри LocalTranslator
+            self.translator.reload_from_postgres(db_service)
+
+            # Принудительно обновляем все строки главного окна конфигуратора
+            self.retranslate_ui()
+
+            # Если диалог работы с сущностями открыт, заставляем его тоже перерисовать свои вкладки
+            if self.db_work_dialog and self.db_work_dialog.isVisible():
+                self.db_work_dialog.retranslate_ui()
+
+            self.statusBar.showMessage(self.translator.tr('msg_translations_refreshed'))
+
+        except Exception as e:
+            # Форматируем системное исключение внутрь локализованной строки
+            error_template = self.translator.tr('err_translations_refresh_failed')
+            error_msg = error_template.format(str(e))
+
+            QMessageBox.critical(
+                self,
+                self.translator.tr('error'),
+                error_msg
+            )
 
     # --- Методы работы с проектом ---
     def new_project(self):
@@ -171,6 +231,56 @@ class MozartIDE(QMainWindow, MozartIDEPanelsMixin):
         if self.current_project_file:
             goProject.p_SaveProject(self.current_project_file)
             self.statusBar.showMessage(self.translator.tr('status_project_saved') + f" {os.path.basename(self.current_project_file)}")
+
+# Конец файла: ide_main.py
+# Размещаем слот синхронизации времени сессии внутри контроллера MozartIDE
+
+    def about(self):
+        """Окно информации о конфигураторе."""
+        QMessageBox.about(self, self.translator.tr('action_about'),
+                          "MOZART ERP Configurator\nВерсия 0.1\nРазработано на PySide6")
+
+        # Фрагмент файла: ide_main.py
+        # Синхронизация прогрева кэша мостов при изменении системного времени сессии
+
+    def on_system_date_changed(self, datetime_val):
+        """Слот, обновляющий глобальное время сессии и очищающий ОЗУ от устаревших версий."""
+        goProject.system_date = datetime_val
+
+        # Системный вызов: сжигаем в памяти неактуальные версии классов
+        if hasattr(goProject, 'class_registry') and goProject.class_registry:
+            goProject.class_registry.sync_registry_with_session_date()
+
+        # Актуализируем кэш декларативных мостов из СУБД под текущий контекст
+        if hasattr(goProject, 'property_bridge_manager') and goProject.property_bridge_manager:
+            goProject.property_bridge_manager.init_and_warm_cache()
+
+        formatted_time = datetime_val.toString("dd.MM.yyyy HH:mm:ss")
+        # 🚀 ФИКС v8.1: Убираем круглые скобки у self.statusBar, так как это объект, а не функция
+        self.statusBar.showMessage(f"Системное время сессии изменено на: {formatted_time}. Кэш ОЗУ очищен.")
+
+
+    def _run_methods_diagnostics(self):
+        """Временная диагностика: проверка sub_method_bridges в ОЗУ."""
+        if not getattr(goProject, 'db_conn', None):
+            QMessageBox.warning(self, "Диагностика", "Сначала подключитесь к БД")
+            return
+
+        node = goProject.class_registry.get_class_version(1)  # MozartTextBox
+        if node is None:
+            QMessageBox.warning(self, "Диагностика", "Класс 1 не загружен")
+            return
+
+        lines = [
+            f"Класс: {node.class_name} (ID: {node.version_id})",
+            f"c_base_class: {node.c_base_class}",
+            f"sub_methods: {list(node.sub_methods.keys())}",
+            f"sub_method_bridges: {list(node.sub_method_bridges.keys())}",
+            f"has_method('mydefault'): {node.has_method('mydefault')}",
+            f"resolve_method('mydefault'): {repr(node.resolve_method('mydefault'))}",
+        ]
+        QMessageBox.information(self, "Диагностика методов", "\n".join(lines))
+
 
 
 if __name__ == "__main__":
